@@ -69,6 +69,49 @@ func ConnectionRepositoryRunner(t *testing.T, constructor ConnectionRepoConstruc
 		err = db.Ping()
 		assert.NoError(t, err)
 	})
+
+	// UC-S2-03: Login Connection Probe
+	t.Run("ProbeFirstAccessible - success", func(t *testing.T) {
+		// Create a mock global metadata with accessible resources
+		mockMetadata := &domain.GlobalMetadata{
+			Databases: []domain.DatabaseMetadata{
+				{Name: "testdb"},
+			},
+			RolePermissions: map[string]*domain.RolePermissions{
+				"postgres": {
+					RoleName:            "postgres",
+					AccessibleDatabases: []string{"testdb"},
+					AccessibleSchemas:   map[string][]string{"testdb": {"public"}},
+					AccessibleTables: map[string][]domain.TableRef{
+						"testdb": {{Schema: "public", Name: "test_table"}},
+					},
+				},
+			},
+		}
+
+		firstDB, err := repo.ProbeFirstAccessible(ctx, "postgres", "postgres", mockMetadata)
+		require.NoError(t, err)
+		assert.NotEmpty(t, firstDB)
+	})
+
+	// UC-S2-04: Login Connection Probe Failure
+	t.Run("ProbeFirstAccessible - no accessible resources", func(t *testing.T) {
+		// Create metadata with no accessible resources for this role
+		mockMetadata := &domain.GlobalMetadata{
+			Databases: []domain.DatabaseMetadata{},
+			RolePermissions: map[string]*domain.RolePermissions{
+				"noaccess": {
+					RoleName:            "noaccess",
+					AccessibleDatabases: []string{},
+					AccessibleSchemas:   map[string][]string{},
+					AccessibleTables:    map[string][]domain.TableRef{},
+				},
+			},
+		}
+
+		_, err := repo.ProbeFirstAccessible(ctx, "noaccess", "password", mockMetadata)
+		assert.Error(t, err, "Should return error when user has no accessible resources")
+	})
 }
 
 // MetadataRepoConstructor is a function that creates a MetadataRepository
@@ -117,6 +160,33 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepoConstructor)
 
 	repo := constructor()
 
+	// IT-S1-02: Load Real Database Metadata with User Accessible Resources
+	t.Run("LoadGlobalMetadata - with role permissions", func(t *testing.T) {
+		metadata, err := repo.LoadGlobalMetadata(ctx, db)
+		require.NoError(t, err)
+		assert.NotNil(t, metadata)
+		assert.NotEmpty(t, metadata.Databases)
+		// UC-S1-05: Should include role permissions
+		assert.NotNil(t, metadata.RolePermissions, "Should load role permissions")
+	})
+
+	// UC-S1-06: In-Memory Metadata Storage - Per Role
+	t.Run("LoadRolePermissions - cache accessible resources", func(t *testing.T) {
+		rolePerms, err := repo.LoadRolePermissions(ctx, db)
+		require.NoError(t, err)
+		assert.NotNil(t, rolePerms)
+		assert.NotEmpty(t, rolePerms, "Should have at least one role")
+
+		// Verify structure includes accessible resources per role
+		for roleName, perms := range rolePerms {
+			assert.NotEmpty(t, roleName)
+			assert.NotNil(t, perms)
+			assert.NotNil(t, perms.AccessibleDatabases, "Role should have accessible databases")
+			assert.NotNil(t, perms.AccessibleSchemas, "Role should have accessible schemas map")
+			assert.NotNil(t, perms.AccessibleTables, "Role should have accessible tables map")
+		}
+	})
+
 	t.Run("LoadGlobalMetadata", func(t *testing.T) {
 		metadata, err := repo.LoadGlobalMetadata(ctx, db)
 		require.NoError(t, err)
@@ -138,6 +208,15 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepoConstructor)
 		assert.NotNil(t, tableMeta)
 		assert.Equal(t, "users", tableMeta.Name)
 		assert.NotEmpty(t, tableMeta.Columns)
+	})
+
+	// IT-S1-03: Load Real Relations and Role Access
+	t.Run("GetTableMetadata - with foreign keys", func(t *testing.T) {
+		tableMeta, err := repo.GetTableMetadata(ctx, db, "public", "posts")
+		require.NoError(t, err)
+		assert.NotNil(t, tableMeta)
+		assert.Equal(t, "posts", tableMeta.Name)
+		assert.NotEmpty(t, tableMeta.ForeignKeys, "posts table should have foreign key to users")
 	})
 
 	t.Run("GetERDData", func(t *testing.T) {
@@ -256,6 +335,97 @@ func QueryRepositoryRunner(t *testing.T, constructor QueryRepoConstructor) {
 		result, err := repo.GetTableData(ctx, db, req)
 		require.NoError(t, err)
 		assert.NotNil(t, result)
+	})
+
+	// UC-S4-03a, UC-S5-07: Query Result Actual Size Display
+	t.Run("GetTableData - shows total count", func(t *testing.T) {
+		// Insert many rows to test total count
+		for i := 0; i < 100; i++ {
+			_, err := db.Exec("INSERT INTO test_data (name, value) VALUES ($1, $2)",
+				"bulk_item", i)
+			require.NoError(t, err)
+		}
+
+		req := domain.TableDataRequest{
+			Schema: "public",
+			Table:  "test_data",
+			Limit:  50,
+		}
+		result, err := repo.GetTableData(ctx, db, req)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		// Should show actual total count even when limited
+		assert.Greater(t, result.TotalCount, int64(50), "TotalCount should show all rows, not just returned")
+	})
+
+	// UC-S4-03b, UC-S5-08: Query Result Limit Hard Cap
+	t.Run("GetTableData - enforces 1000 row hard limit", func(t *testing.T) {
+		// Insert more than 1000 rows
+		for i := 0; i < 1500; i++ {
+			_, err := db.Exec("INSERT INTO test_data (name, value) VALUES ($1, $2)",
+				"limit_test", i)
+			require.NoError(t, err)
+		}
+
+		req := domain.TableDataRequest{
+			Schema: "public",
+			Table:  "test_data",
+			Limit:  50,
+		}
+
+		// Fetch multiple pages up to the hard limit
+		totalFetched := 0
+		cursor := ""
+		for totalFetched < 1500 {
+			req.Cursor = cursor
+			result, err := repo.GetTableData(ctx, db, req)
+			require.NoError(t, err)
+
+			if len(result.Rows) == 0 || !result.HasMore {
+				break
+			}
+
+			totalFetched += len(result.Rows)
+			cursor = result.NextCursor
+
+			// Should stop at 1000 rows maximum
+			if totalFetched >= 1000 {
+				assert.LessOrEqual(t, totalFetched, 1000, "Should not fetch more than 1000 rows")
+				assert.False(t, result.HasMore, "HasMore should be false at 1000 row limit")
+				break
+			}
+		}
+
+		assert.LessOrEqual(t, totalFetched, 1000, "Total fetched rows should not exceed 1000")
+	})
+
+	// UC-S5-18: GetReferencingTables for Primary Key navigation
+	t.Run("GetReferencingTables - returns child tables", func(t *testing.T) {
+		// Create parent and child tables
+		_, err := db.Exec(`
+			CREATE TABLE parent_table (
+				id SERIAL PRIMARY KEY,
+				name VARCHAR(100)
+			);
+			CREATE TABLE child_table (
+				id SERIAL PRIMARY KEY,
+				parent_id INTEGER REFERENCES parent_table(id),
+				data VARCHAR(100)
+			);
+			INSERT INTO parent_table (name) VALUES ('parent1');
+			INSERT INTO child_table (parent_id, data) VALUES (1, 'child1'), (1, 'child2');
+		`)
+		require.NoError(t, err)
+
+		// Get referencing tables for parent_table PK
+		refTables, err := repo.GetReferencingTables(ctx, db, "public", "parent_table", "id", 1)
+		require.NoError(t, err)
+		assert.NotNil(t, refTables)
+
+		// Should show child_table with count
+		childCount, exists := refTables["child_table"]
+		assert.True(t, exists, "Should include child_table")
+		assert.Equal(t, int64(2), childCount, "Should show 2 child rows")
 	})
 }
 
