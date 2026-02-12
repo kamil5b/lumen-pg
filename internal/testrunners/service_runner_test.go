@@ -1,13 +1,9 @@
 package testrunners
 
 import (
-	"context"
 	"testing"
 
-	"github.com/kamil5b/lumen-pg/internal/domain"
 	"github.com/kamil5b/lumen-pg/internal/interfaces"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 

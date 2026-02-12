@@ -1,17 +1,9 @@
 package testrunners
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/kamil5b/lumen-pg/internal/domain"
 	"github.com/kamil5b/lumen-pg/internal/interfaces"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -222,38 +214,4 @@ func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstr
 		t.Skip("Requires mock implementation")
 		// Test row insertion in transaction mode
 	})
-}
-
-// Example of how to use handlers with gomock (once mocks are generated):
-func ExampleHandlerWithMocks(t *testing.T) {
-	t.Skip("Example of handler test with mocks - requires mockgen")
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// This is how you would use mocks once generated:
-	// mockAuthService := mocks.NewMockAuthService(ctrl)
-	//
-	// mockAuthService.EXPECT().
-	//     Login(gomock.Any(), gomock.Any()).
-	//     Return(&domain.Session{
-	//         Username: "testuser",
-	//         FirstAccessibleDB: "testdb",
-	//     }, nil)
-	//
-	// handler := constructor(mockAuthService)
-	// r := chi.NewRouter()
-	// handler.RegisterRoutes(r)
-	//
-	// input := domain.LoginInput{
-	//     Username: "testuser",
-	//     Password: "password",
-	// }
-	// body, _ := json.Marshal(input)
-	// req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(body))
-	// rec := httptest.NewRecorder()
-	//
-	// r.ServeHTTP(rec, req)
-	//
-	// assert.Equal(t, http.StatusOK, rec.Code)
 }

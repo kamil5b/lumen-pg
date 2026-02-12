@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
 	"github.com/kamil5b/lumen-pg/internal/interfaces"
