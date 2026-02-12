@@ -11,11 +11,11 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	_ "github.com/lib/pq"
 
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
 )
 
 // MetadataRepoConstructor creates a metadata repository with database connection
-type MetadataRepoConstructor func(db *sql.DB) interfaces.MetadataRepository
+type MetadataRepoConstructor func(db *sql.DB) repository.MetadataRepository
 
 // MetadataRepositoryRunner runs integration tests for metadata repository (Story 1)
 func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepoConstructor) {

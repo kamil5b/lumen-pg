@@ -72,22 +72,33 @@ lumen-pg/
 │   │   └── transaction.go   # Transaction state
 │   │
 │   ├── interfaces/          # Interface contracts
-│   │   ├── connection.go    # Connection operations
-│   │   ├── metadata.go      # Metadata loading
-│   │   ├── query.go         # Query execution
-│   │   ├── session.go       # Session management
-│   │   ├── transaction.go   # Transaction handling
-│   │   └── handler.go       # HTTP handlers
+│   │   ├── repository/      # Repository interfaces
+│   │   │   ├── connection.go    # Connection operations
+│   │   │   ├── metadata.go      # Metadata loading
+│   │   │   ├── query.go         # Query execution
+│   │   │   ├── session.go       # Session management
+│   │   │   └── transaction.go   # Transaction handling
+│   │   └── usecase/         # Use case interfaces
+│   │       ├── connection.go    # Connection validation use cases
+│   │       ├── metadata.go      # Metadata loading use cases
+│   │       ├── auth.go          # Authentication use cases
+│   │       ├── query.go         # Query execution use cases
+│   │       ├── transaction.go   # Transaction use cases
+│   │       └── handler.go       # HTTP handler interfaces
 │   │
 │   ├── implementations/     # Concrete implementations
-│   │   ├── mocks/           # Auto-generated mocks
+│   │   ├── mocks/           # Auto-generated mocks (11 files)
+│   │   │   ├── *_repository_mock.go  # Repository mocks (5)
+│   │   │   ├── *_usecase_mock.go     # Use case mocks (5)
+│   │   │   └── handler_mock.go       # Handler mocks (1)
 │   │   ├── repository/      # PostgreSQL repositories
 │   │   ├── usecase/         # Business logic use cases
 │   │   └── handler/         # HTTP handlers
 │   │
 │   └── testrunners/         # Test specifications (TDD)
-│       ├── *_usecase_runner_test.go      # Unit test specs
-│       └── *_repository_runner_test.go   # Integration test specs
+│       ├── *_usecase_runner_test.go      # Unit test specs (5 files)
+│       ├── *_repository_runner_test.go   # Integration test specs (2 files)
+│       └── *_handler_runner_test.go      # Handler test specs (4 files)
 │
 ├── REQUIREMENT.md           # Full requirements specification
 ├── TEST_PLAN.md            # Comprehensive test plan
@@ -154,12 +165,20 @@ go test ./... -cover
 After modifying interfaces:
 
 ```bash
-# Generate all mocks
-mockgen -source=internal/interfaces/connection.go -destination=internal/implementations/mocks/connection_mock.go -package=mocks
-mockgen -source=internal/interfaces/metadata.go -destination=internal/implementations/mocks/metadata_mock.go -package=mocks
-mockgen -source=internal/interfaces/query.go -destination=internal/implementations/mocks/query_mock.go -package=mocks
-mockgen -source=internal/interfaces/session.go -destination=internal/implementations/mocks/session_mock.go -package=mocks
-mockgen -source=internal/interfaces/transaction.go -destination=internal/implementations/mocks/transaction_mock.go -package=mocks
+# Repository mocks
+mockgen -source=internal/interfaces/repository/connection.go -destination=internal/implementations/mocks/connection_repository_mock.go -package=mocks
+mockgen -source=internal/interfaces/repository/metadata.go -destination=internal/implementations/mocks/metadata_repository_mock.go -package=mocks
+mockgen -source=internal/interfaces/repository/query.go -destination=internal/implementations/mocks/query_repository_mock.go -package=mocks
+mockgen -source=internal/interfaces/repository/session.go -destination=internal/implementations/mocks/session_repository_mock.go -package=mocks
+mockgen -source=internal/interfaces/repository/transaction.go -destination=internal/implementations/mocks/transaction_repository_mock.go -package=mocks
+
+# Use case mocks
+mockgen -source=internal/interfaces/usecase/connection.go -destination=internal/implementations/mocks/connection_usecase_mock.go -package=mocks
+mockgen -source=internal/interfaces/usecase/metadata.go -destination=internal/implementations/mocks/metadata_usecase_mock.go -package=mocks
+mockgen -source=internal/interfaces/usecase/auth.go -destination=internal/implementations/mocks/auth_usecase_mock.go -package=mocks
+mockgen -source=internal/interfaces/usecase/query.go -destination=internal/implementations/mocks/query_usecase_mock.go -package=mocks
+mockgen -source=internal/interfaces/usecase/transaction.go -destination=internal/implementations/mocks/transaction_usecase_mock.go -package=mocks
+mockgen -source=internal/interfaces/usecase/handler.go -destination=internal/implementations/mocks/handler_mock.go -package=mocks
 ```
 
 ### Next Steps

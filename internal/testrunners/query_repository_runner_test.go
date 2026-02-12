@@ -11,11 +11,11 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	_ "github.com/lib/pq"
 
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
 )
 
 // QueryRepoConstructor creates a query repository with database connection
-type QueryRepoConstructor func(db *sql.DB) interfaces.QueryRepository
+type QueryRepoConstructor func(db *sql.DB) repository.QueryRepository
 
 // QueryRepositoryRunner runs integration tests for query repository (Story 4)
 func QueryRepositoryRunner(t *testing.T, constructor QueryRepoConstructor) {

@@ -9,22 +9,17 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
 	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 )
 
 // AuthUseCaseConstructor creates an auth use case with its dependencies
 type AuthUseCaseConstructor func(
-	connRepo interfaces.ConnectionRepository,
-	metadataRepo interfaces.MetadataRepository,
-	sessionRepo interfaces.SessionRepository,
-) AuthUseCase
-
-// AuthUseCase represents the authentication use case
-type AuthUseCase interface {
-	Login(ctx context.Context, req domain.LoginRequest) (*domain.LoginResponse, error)
-	Logout(ctx context.Context, sessionToken string) error
-}
+	connRepo repository.ConnectionRepository,
+	metadataRepo repository.MetadataRepository,
+	sessionRepo repository.SessionRepository,
+) usecase.AuthUseCase
 
 // AuthUseCaseRunner runs test specs for auth use case (Story 2)
 func AuthUseCaseRunner(t *testing.T, constructor AuthUseCaseConstructor) {

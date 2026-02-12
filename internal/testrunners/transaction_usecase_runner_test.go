@@ -10,20 +10,13 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
 	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 )
 
 // TransactionUseCaseConstructor creates a transaction use case with its dependencies
-type TransactionUseCaseConstructor func(repo interfaces.TransactionRepository) TransactionUseCase
-
-// TransactionUseCase represents the transaction management use case
-type TransactionUseCase interface {
-	StartTransaction(ctx context.Context, username string, tableName string) (*domain.Transaction, error)
-	BufferEdit(ctx context.Context, txnID string, op domain.TransactionOperation) error
-	CommitTransaction(ctx context.Context, txnID string) error
-	RollbackTransaction(ctx context.Context, txnID string) error
-}
+type TransactionUseCaseConstructor func(repo repository.TransactionRepository) usecase.TransactionUseCase
 
 // TransactionUseCaseRunner runs test specs for transaction use case (Story 5)
 func TransactionUseCaseRunner(t *testing.T, constructor TransactionUseCaseConstructor) {

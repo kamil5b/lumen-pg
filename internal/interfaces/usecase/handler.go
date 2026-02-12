@@ -1,4 +1,4 @@
-package interfaces
+package usecase
 
 import (
 	"github.com/go-chi/chi/v5"

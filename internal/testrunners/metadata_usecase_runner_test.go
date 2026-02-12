@@ -9,18 +9,13 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
 	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 )
 
 // MetadataUseCaseConstructor creates a metadata use case with its dependencies
-type MetadataUseCaseConstructor func(repo interfaces.MetadataRepository) MetadataUseCase
-
-// MetadataUseCase represents the metadata loading use case
-type MetadataUseCase interface {
-	LoadGlobalMetadata(ctx context.Context) (*domain.GlobalMetadata, error)
-	LoadRoleAccessibleResources(ctx context.Context, roleName string) (*domain.RoleMetadata, error)
-}
+type MetadataUseCaseConstructor func(repo repository.MetadataRepository) usecase.MetadataUseCase
 
 // MetadataUseCaseRunner runs test specs for metadata use case (Story 1)
 func MetadataUseCaseRunner(t *testing.T, constructor MetadataUseCaseConstructor) {

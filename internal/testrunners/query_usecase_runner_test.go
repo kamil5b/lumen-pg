@@ -9,18 +9,13 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
 	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 )
 
 // QueryUseCaseConstructor creates a query use case with its dependencies
-type QueryUseCaseConstructor func(repo interfaces.QueryRepository) QueryUseCase
-
-// QueryUseCase represents the query execution use case
-type QueryUseCase interface {
-	ExecuteQuery(ctx context.Context, sql string, params ...interface{}) (*domain.QueryResult, error)
-	ExecuteMultipleQueries(ctx context.Context, queries string) ([]*domain.QueryResult, error)
-}
+type QueryUseCaseConstructor func(repo repository.QueryRepository) usecase.QueryUseCase
 
 // QueryUseCaseRunner runs test specs for query use case (Story 4)
 func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {

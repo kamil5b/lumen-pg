@@ -9,18 +9,13 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
-	"github.com/kamil5b/lumen-pg/internal/interfaces"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
 	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 )
 
 // ConnectionUseCaseConstructor creates a connection use case with its dependencies
-type ConnectionUseCaseConstructor func(repo interfaces.ConnectionRepository) ConnectionUseCase
-
-// ConnectionUseCase represents the connection validation use case
-type ConnectionUseCase interface {
-	ValidateConnectionString(connStr string) error
-	TestConnection(ctx context.Context, connStr string) error
-}
+type ConnectionUseCaseConstructor func(repo repository.ConnectionRepository) usecase.ConnectionUseCase
 
 // ConnectionUseCaseRunner runs test specs for connection use case (Story 1)
 func ConnectionUseCaseRunner(t *testing.T, constructor ConnectionUseCaseConstructor) {
