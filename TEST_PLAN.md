@@ -39,20 +39,20 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Testing connectivity to PostgreSQL instance
 - **Then**: Returns connection error
 
-#### UC-S1-05: Metadata Initialization
+#### UC-S1-05: Metadata Initialization - Roles and Permissions
 - **Given**: Valid superadmin connection
 - **When**: Initialize metadata cache
-- **Then**: Fetches databases, schemas, tables, columns, relations
+- **Then**: Fetches all PostgreSQL roles and their permissions on databases, schemas, tables
 
-#### UC-S1-06: In-Memory Metadata Storage
-- **Given**: Fetched metadata
+#### UC-S1-06: In-Memory Metadata Storage - Per Role
+- **Given**: Fetched metadata with roles and permissions
 - **When**: Storing in memory
-- **Then**: Metadata is accessible throughout application lifecycle
+- **Then**: Caches accessible databases, schemas, tables for each role
 
-#### UC-S1-07: RBAC Initialization
-- **Given**: PostgreSQL roles and permissions
+#### UC-S1-07: RBAC Initialization with User Accessibility
+- **Given**: PostgreSQL roles with varying permissions
 - **When**: Initialize RBAC
-- **Then**: Maps Postgres roles to application permissions
+- **Then**: Maps each role to accessible resources (databases, schemas, tables) and stores in memory
 
 ### Integration Tests
 
@@ -61,20 +61,20 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Application starts with valid connection string
 - **Then**: Successfully connects and initializes
 
-#### IT-S1-02: Load Real Database Metadata
-- **Given**: PostgreSQL with multiple databases and schemas
-- **When**: Loading global metadata
-- **Then**: Returns all databases, schemas, tables, columns
+#### IT-S1-02: Load Real Database Metadata with User Accessible Resources
+- **Given**: PostgreSQL with multiple databases, schemas, and roles with different permissions
+- **When**: Loading global metadata during initialization
+- **Then**: Returns all databases, schemas, tables, columns WITH associated role permissions
 
-#### IT-S1-03: Load Real Relations
-- **Given**: Tables with foreign key relationships
+#### IT-S1-03: Load Real Relations and Role Access
+- **Given**: Tables with foreign key relationships and role-based access
 - **When**: Loading metadata
-- **Then**: Returns all foreign key relationships
+- **Then**: Returns all foreign key relationships and which roles can access related tables
 
-#### IT-S1-04: Load Real User Roles
-- **Given**: PostgreSQL with multiple roles
-- **When**: Loading metadata
-- **Then**: Returns all roles and their permissions
+#### IT-S1-04: Cache Accessible Resources Per Role
+- **Given**: PostgreSQL with multiple roles (admin, editor, viewer)
+- **When**: Loading metadata from roles
+- **Then**: Caches accessible databases, schemas, and tables for each role separately in memory
 
 ---
 
@@ -92,119 +92,129 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Attempting login
 - **Then**: Returns validation error
 
-#### UC-S2-03: Login Success
+#### UC-S2-03: Login Connection Probe
 - **Given**: Valid PostgreSQL credentials
-- **When**: User logs in
-- **Then**: Creates session and returns session ID
-
-#### UC-S2-04: Login Failure - Invalid Credentials
-- **Given**: Invalid PostgreSQL credentials
 - **When**: User attempts login
-- **Then**: Returns authentication error
+- **Then**: Probes connection to first accessible database, schema, and table for that user
 
-#### UC-S2-05: Session Cookie Creation - Username
-- **Given**: Successful login
+#### UC-S2-04: Login Connection Probe Failure
+- **Given**: User credentials but no accessible tables
+- **When**: Probing connection to first accessible resource
+- **Then**: Returns error (no accessible resources found)
+
+#### UC-S2-05: Login Success After Probe
+- **Given**: Valid PostgreSQL credentials and accessible database/schema/table
+- **When**: Connection probe succeeds
+- **Then**: Creates session with cookies and returns first accessible table data
+
+#### UC-S2-06: Session Cookie Creation - Username
+- **Given**: Successful login after probe
 - **When**: Creating cookies
 - **Then**: Sets long-lived cookie with username
 
-#### UC-S2-06: Session Cookie Creation - Password
-- **Given**: Successful login
+#### UC-S2-07: Session Cookie Creation - Password
+- **Given**: Successful login after probe
 - **When**: Creating cookies
 - **Then**: Sets short-lived encrypted cookie with password
 
-#### UC-S2-07: Session Validation - Valid Session
+#### UC-S2-08: Session Validation - Valid Session
 - **Given**: Valid session cookie
 - **When**: Validating session
 - **Then**: Returns success
 
-#### UC-S2-08: Session Validation - Expired Session
+#### UC-S2-09: Session Validation - Expired Session
 - **Given**: Expired session cookie
 - **When**: Validating session
 - **Then**: Returns session expired error
 
-#### UC-S2-09: Session Re-authentication
+#### UC-S2-10: Session Re-authentication
 - **Given**: Encrypted password cookie
 - **When**: Each request
 - **Then**: Re-authenticates with PostgreSQL
 
-#### UC-S2-10: First Accessible Table Discovery
-- **Given**: User with limited permissions
-- **When**: After login
-- **Then**: Finds first table user can access
+#### UC-S2-11: Data Explorer Population After Login
+- **Given**: Successful login with connection probe completed
+- **When**: Session created and user redirected to Main View
+- **Then**: Data Explorer sidebar populated with user's accessible databases, schemas, and tables
 
-#### UC-S2-11: Logout Cookie Clearing
+#### UC-S2-12: Logout Cookie Clearing
 - **Given**: Authenticated session
 - **When**: User logs out
 - **Then**: Clears both cookies
 
-#### UC-S2-12: Header Username Display
+#### UC-S2-13: Header Username Display
 - **Given**: Authenticated session
 - **When**: Rendering header
 - **Then**: Displays username on the right
 
-#### UC-S2-13: Navigation Menu Rendering
+#### UC-S2-14: Navigation Menu Rendering
 - **Given**: Authenticated session
 - **When**: Rendering header
 - **Then**: Shows Main View, Manual Query Editor, ERD Viewer
 
-#### UC-S2-14: Metadata Refresh Button
+#### UC-S2-15: Metadata Refresh Button
 - **Given**: Authenticated session with superadmin rights
 - **When**: Clicking refresh button
 - **Then**: Reloads global metadata from DBMS
 
 ### Integration Tests
 
-#### IT-S2-01: Real PostgreSQL Authentication Success
-- **Given**: Real PostgreSQL user
+#### IT-S2-01: Real PostgreSQL Connection Probe
+- **Given**: Real PostgreSQL user with accessible resources
 - **When**: Logging in with valid credentials
-- **Then**: Successfully authenticates
+- **Then**: Successfully probes connection to first accessible database, schema, and table
 
-#### IT-S2-02: Real PostgreSQL Authentication Failure
-- **Given**: Real PostgreSQL instance
-- **When**: Logging in with invalid credentials
-- **Then**: Authentication fails
+#### IT-S2-02: Real PostgreSQL Connection Probe Failure
+- **Given**: Real PostgreSQL user with no accessible resources
+- **When**: Logging in with valid credentials
+- **Then**: Connection probe fails, login rejected
 
-#### IT-S2-03: Role-Aware Schema Access
-- **Given**: User with limited schema access
-- **When**: Loading accessible schemas
-- **Then**: Returns only schemas user has CONNECT permission
+#### IT-S2-03: Real Role-Based Resource Access
+- **Given**: Multiple PostgreSQL users with different role permissions
+- **When**: Each user logs in
+- **Then**: Returns only databases, schemas, tables accessible to that user
 
-#### IT-S2-04: Session Persistence
-- **Given**: Logged in user
+#### IT-S2-04: Session Persistence After Probe
+- **Given**: Logged in user after successful probe
 - **When**: Making multiple requests
-- **Then**: Session persists across requests
+- **Then**: Session persists and accessible resources remain cached
 
-#### IT-S2-05: Concurrent User Sessions
-- **Given**: Multiple users with different credentials
+#### IT-S2-05: Concurrent User Sessions with Isolated Resources
+- **Given**: Multiple users with different credentials and permissions
 - **When**: Logging in simultaneously
-- **Then**: Each has isolated session
+- **Then**: Each has isolated session with separate Data Explorer populated for their accessible resources
 
 ### E2E Tests
 
-#### E2E-S2-01: Login Flow
-- **Given**: User visits application
-- **When**: Submitting login form with valid credentials
-- **Then**: Redirects to Main View with first table data
+#### E2E-S2-01: Login Flow with Connection Probe
+- **Given**: User visits application with valid credentials
+- **When**: Submitting login form
+- **Then**: System probes first accessible resource, creates session, populates Data Explorer sidebar, redirects to Main View showing first accessible table (success indicator)
 
-#### E2E-S2-02: Login Flow - Invalid Credentials
+#### E2E-S2-02: Login Flow - No Accessible Resources
+- **Given**: User visits application with valid credentials but no accessible tables
+- **When**: Submitting login form
+- **Then**: Shows error message "No accessible resources found"
+
+#### E2E-S2-03: Login Flow - Invalid Credentials
 - **Given**: User visits application
 - **When**: Submitting login form with invalid credentials
 - **Then**: Shows error message on login page
 
-#### E2E-S2-03: Logout Flow
+#### E2E-S2-04: Logout Flow
 - **Given**: Authenticated user
 - **When**: Clicking logout button
 - **Then**: Redirects to login page and clears session
 
-#### E2E-S2-04: Protected Route Access Without Auth
+#### E2E-S2-05: Protected Route Access Without Auth
 - **Given**: Unauthenticated user
 - **When**: Accessing protected route directly
 - **Then**: Redirects to login page
 
-#### E2E-S2-05: Sidebar Data Loading
-- **Given**: Authenticated user
+#### E2E-S2-06: Data Explorer Populated After Login
+- **Given**: User successfully logged in and redirected to Main View
 - **When**: Main page loads
-- **Then**: Sidebar shows only databases/schemas user can access
+- **Then**: Data Explorer sidebar is populated with user's accessible databases, schemas, and tables; Main View displays first accessible table data
 
 ---
 
@@ -282,10 +292,25 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Executing queries
 - **Then**: Executes all queries in sequence
 
-#### UC-S4-03: Query Result Limit
+#### UC-S4-03: Query Result Offset Pagination
 - **Given**: SELECT query returning many rows
 - **When**: Executing query
-- **Then**: Limits to 1000 rows maximum
+- **Then**: Returns first page (1000 rows max) with offset pagination
+
+#### UC-S4-03a: Query Result Actual Size Display
+- **Given**: SELECT query returning 5000 rows
+- **When**: Executing query
+- **Then**: Shows "Data size: 5000 rows" indicator while only loading first 1000 rows
+
+#### UC-S4-03b: Query Result Limit Hard Cap
+- **Given**: SELECT query returning more than 1000 rows
+- **When**: Executing query
+- **Then**: Hard limits to 1000 rows maximum (no more pages beyond this)
+
+#### UC-S4-03c: Offset Pagination Next Page
+- **Given**: Query results with 1000 rows on first page
+- **When**: Requesting next page with offset
+- **Then**: Returns empty or message that limit reached
 
 #### UC-S4-04: DDL Query Execution
 - **Given**: CREATE TABLE query
@@ -356,10 +381,20 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Clicking Execute button
 - **Then**: Displays error message in red
 
-#### E2E-S4-05: Infinite Scroll Results
-- **Given**: Query with 1000+ rows
-- **When**: Scrolling through results
-- **Then**: Shows first 1000 rows with message about limit
+#### E2E-S4-05: Offset Pagination Results
+- **Given**: Query with large result set (5000 rows)
+- **When**: Viewing results
+- **Then**: Shows first page (up to 1000 rows) with previous/next buttons and "Data size: 5000 rows" indicator
+
+#### E2E-S4-05a: Offset Pagination Navigation
+- **Given**: Query results displayed on first page with 1000 rows loaded
+- **When**: Clicking next page button
+- **Then**: Shows message that hard limit of 1000 rows reached (no additional pages beyond this)
+
+#### E2E-S4-05b: Query Result Actual Size vs Display Limit
+- **Given**: Query returning more than 1000 rows (e.g., 10000 rows total)
+- **When**: Viewing results
+- **Then**: Shows "Data size: 10000 rows" but displays maximum 1000 rows with indication that only first 1000 are accessible
 
 #### E2E-S4-06: SQL Syntax Highlighting
 - **Given**: Query editor with SQL
@@ -378,9 +413,9 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **Then**: Returns first 50 rows
 
 #### UC-S5-02: Cursor Pagination Next Page
-- **Given**: Table with 100 rows
-- **When**: Loading next page with cursor
-- **Then**: Returns next 50 rows
+- **Given**: Table with 100 rows, user has loaded first 50
+- **When**: Loading next page with cursor (infinite scroll)
+- **Then**: Returns next 50 rows with new cursor
 
 #### UC-S5-03: WHERE Clause Validation
 - **Given**: Valid WHERE clause fragment
@@ -402,57 +437,67 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Sorting by column descending
 - **Then**: Returns sorted data
 
-#### UC-S5-07: Transaction Start
+#### UC-S5-07: Cursor Pagination Actual Size Display
+- **Given**: Table with 5000 total rows
+- **When**: Loading table data
+- **Then**: Shows "Data size: 5000 rows" indicator while only loading up to 1000 rows
+
+#### UC-S5-08: Cursor Pagination Hard Limit
+- **Given**: Table with 1000+ rows loaded via infinite scroll
+- **When**: Reaching hard limit of 1000 rows
+- **Then**: Stops loading more data and shows indication that limit reached
+
+#### UC-S5-09: Transaction Start
 - **Given**: User session without active transaction
 - **When**: Starting transaction
 - **Then**: Transaction becomes active with 1-minute timer
 
-#### UC-S5-08: Transaction Already Active Error
+#### UC-S5-10: Transaction Already Active Error
 - **Given**: User session with active transaction
 - **When**: Attempting to start another transaction
 - **Then**: Returns error
 
-#### UC-S5-09: Cell Edit Buffering
+#### UC-S5-11: Cell Edit Buffering
 - **Given**: Active transaction
 - **When**: Editing cell value
 - **Then**: Operation added to buffer, not committed
 
-#### UC-S5-10: Transaction Commit
+#### UC-S5-12: Transaction Commit
 - **Given**: Active transaction with buffered operations
 - **When**: Committing transaction
 - **Then**: Executes all operations atomically
 
-#### UC-S5-11: Transaction Rollback
+#### UC-S5-13: Transaction Rollback
 - **Given**: Active transaction with buffered operations
 - **When**: Rolling back transaction
 - **Then**: Discards all buffered operations
 
-#### UC-S5-12: Transaction Timer Expiration
+#### UC-S5-14: Transaction Timer Expiration
 - **Given**: Active transaction 1 minute old
 - **When**: Timer expires
 - **Then**: Transaction automatically rolls back
 
-#### UC-S5-13: Row Deletion Buffering
+#### UC-S5-15: Row Deletion Buffering
 - **Given**: Active transaction
 - **When**: Deleting row
 - **Then**: DELETE operation added to buffer
 
-#### UC-S5-14: Row Insertion Buffering
+#### UC-S5-16: Row Insertion Buffering
 - **Given**: Active transaction
 - **When**: Inserting new row
 - **Then**: INSERT operation added to buffer
 
-#### UC-S5-15: Foreign Key Navigation
+#### UC-S5-17: Foreign Key Navigation
 - **Given**: Cell with foreign key value
 - **When**: Clicking cell (not in transaction mode)
 - **Then**: Navigates to parent table
 
-#### UC-S5-16: Primary Key Navigation
+#### UC-S5-18: Primary Key Navigation
 - **Given**: Cell with primary key value
 - **When**: Clicking cell (not in transaction mode)
-- **Then**: Shows referencing child tables
+- **Then**: Shows modal/panel with list of referencing tables and row counts for each
 
-#### UC-S5-17: Read-Only Mode Enforcement
+#### UC-S5-19: Read-Only Mode Enforcement
 - **Given**: Not in transaction mode
 - **When**: Attempting to edit cell
 - **Then**: Editing is disabled
@@ -491,8 +536,8 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 
 #### IT-S5-07: Real Primary Key Navigation
 - **Given**: Tables with FK relationships
-- **When**: Clicking PK cell
-- **Then**: Shows child tables that reference it
+- **When**: Fetching referencing tables for a PK value
+- **Then**: Returns list of referencing tables with accurate row counts for that FK relationship
 
 ### E2E Tests
 
@@ -516,10 +561,20 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Clicking column header
 - **Then**: Sorts data by that column
 
-#### E2E-S5-05: Infinite Scroll Pagination
-- **Given**: Main view with large table
-- **When**: Scrolling to bottom
-- **Then**: Loads next page automatically
+#### E2E-S5-05: Cursor Pagination Infinite Scroll with Actual Size
+- **Given**: Main view with table data (5000 total rows, 50 rows per page, hard limit 1000 rows)
+- **When**: Viewing table
+- **Then**: Shows "Data size: 5000 rows" and loads first 50 rows automatically
+
+#### E2E-S5-05a: Cursor Pagination Infinite Scroll Loading
+- **Given**: Main view with first page loaded (50 rows shown)
+- **When**: Scrolling to bottom of current page
+- **Then**: Loads next 50 rows automatically via cursor pagination
+
+#### E2E-S5-05b: Pagination Hard Limit Enforcement
+- **Given**: Main view loaded with 1000 rows (20 pages × 50 rows)
+- **When**: User scrolls to bottom after reaching hard limit
+- **Then**: No more data loads and shows "Reached limit of 1000 rows. Total available: 5000 rows"
 
 #### E2E-S5-06: Start Transaction Button
 - **Given**: Main view not in transaction mode
@@ -567,9 +622,14 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **Then**: Navigates to parent table
 
 #### E2E-S5-15: PK Cell Navigation (Read-Only)
-- **Given**: Not in transaction mode
+- **Given**: Not in transaction mode, viewing table with PK that has foreign key references
 - **When**: Clicking PK cell
-- **Then**: Shows modal/panel with referencing tables
+- **Then**: Shows modal/panel with list of referencing tables and row counts (e.g., "orders: 5 rows", "invoices: 3 rows")
+
+#### E2E-S5-15a: PK Cell Navigation - Table Click
+- **Given**: Modal/panel open showing referencing tables
+- **When**: Clicking on a referencing table in the modal
+- **Then**: Main view navigates to that table with WHERE clause filtering to show only related rows
 
 ---
 

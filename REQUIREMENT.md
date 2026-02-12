@@ -13,20 +13,23 @@ Here is the stories:
 ### Story 1: Setup & Configuration
 When run, it have "-db" with superadmin connection string (the database name usually "postgres") to connect to Postgres instance. The application:
 - Validates the connection string and tests connectivity to the Postgres instance
-- Fetches and caches (in-memory) metadata about available databases, schemas, tables, columns, relations, and user roles
-- Initializes role-based access control (RBAC) based on Postgres roles and permissions.
-- Store database url in memory for the rest of the application lifecycle
+- Fetches and caches (in-memory) metadata about available databases, schemas, tables, columns, relations, and PostgreSQL roles
+- For each role, determines and caches which databases, schemas, and tables are accessible based on role permissions
+- Initializes role-based access control (RBAC) mapping each role to their accessible resources
+- Store database url and role-based metadata in memory for the rest of the application lifecycle
 
 ### Story 2: Authentication & Identity
 
 When visiting the application, users authenticate with their PostgreSQL credentials. The application:
 - Displays a minimalist login form page with username and password
-- Validates the connection string and tests connectivity to the Postgres instance with the first table that have accessible for that user
+- Validates credentials and probes connection to the user's first accessible database, schema, and table before creating session
+- If connection probe fails (user has no accessible resources), login is rejected with error message
+- If connection probe succeeds, creates session with cookies
 - Stores identity in a long-lived cookie for UI pre-filling (username)
 - Encrypts the session password in a short-lived cookie and re-authenticates on each request
-- Move to Main Page, Main View will display after login shows table data from the first accessible table for that user
-- Data Explorer sidebar shows databases and schemas the user has access to (role-aware)
-- Allows users to switch between databases they have `CONNECT` permissions for
+- After successful probe and session creation, populates Data Explorer sidebar with user's accessible databases, schemas, and tables (based on their role permissions from Story 1)
+- Redirects to Main View which displays data from the first accessible table (indicator of successful login)
+- Allows users to switch between accessible databases they have `CONNECT` permissions for
 - There will be a Header with:
     - Application title on the left
     - Username on the right
@@ -50,7 +53,10 @@ When visiting the application, users authenticate with their PostgreSQL credenti
 - The Manual Query Editor provides a text area for users to write and execute custom SQL queries
 - The editor supports syntax highlighting for SQL
 - An "Execute" button runs the highlighted query / on cursor query and displays results below the editor. It can be more than 1 query, separated by semicolons
-- Results are shown in a offset paginated table (not offset pagination). It will be infinite scrolling format for SELECT queries (hard limit 1000 rows max)
+- Results are shown with offset pagination in a table format for SELECT queries
+  - Display shows actual total result size (e.g., "Data size: 5000 rows")
+  - Hard limit: Only first 1000 rows are loaded and displayed (navigable with previous/next buttons)
+  - User can see how many total rows exist but cannot page beyond the 1000 row limit
 - For DDL/DML queries, the editor displays affected row counts or success messages
 - Error messages are displayed for invalid queries
 
@@ -61,14 +67,18 @@ When visiting the application, users authenticate with their PostgreSQL credenti
 - In Main View:
     - There will be A "Where Bar" for entering SQL WHERE clause fragments to filter results
     - Besides "Where Bar" there will be "Start Transaction" button
-    - Under "Where Bar" there will be table data with cursor pagination limit 50 per page (not offset pagination). It will be infinite scrolling
+    - Under "Where Bar" there will be table data with cursor pagination limit 50 per page with infinite scrolling
+      - Display shows actual total result size (e.g., "Data size: 5000 rows")
+      - Hard limit: Only first 1000 rows are loaded via infinite scroll (20 pages × 50 rows)
+      - User can see how many total rows exist but can only access up to 1000 rows
     - Table columns are sortable by clicking on the column headers
     - NOT IN TRANSACTION MODE:
         - Data is read-only
         - No inline editing
         - No commit/rollback buttons
         - Clicking a Foreign Key cell navigates to parent table
-        - Clicking a Primary Key cell shows referencing child tables
+        - Clicking a Primary Key cell shows a modal/panel with list of referencing child tables and row counts for each (e.g., "orders: 5 rows", "invoices: 3 rows")
+        - Clicking on a referencing table in the modal navigates to that table with WHERE clause filtering to show only related rows
     - IN TRANSACTION MODE:
         - Inline cell editing enabled
         - Edited cells are buffered but not committed
