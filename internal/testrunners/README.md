@@ -17,34 +17,33 @@ internal/
 ├─ domain/              # Pure business types (no dependencies)
 ├─ interfaces/          # Interface contracts for all layers
 ├─ testrunners/         # Test runners (this directory)
-└─ implementations/     # Concrete implementations (to be created)
-   ├─ mocks/            # Generated mocks
-   ├─ repository/       # PostgreSQL repository implementations
-   ├─ service/          # Service layer implementations
-   └─ handler/          # HTTP handler implementations
+└─ implementations/     # Concrete implementations
+   ├─ mocks/            # Generated mocks ✅ (already generated)
+   ├─ repository/       # PostgreSQL repository implementations (to be created)
+   ├─ service/          # Service layer implementations (to be created)
+   └─ handler/          # HTTP handler implementations (to be created)
 ```
 
-## Generating Mocks
+## Generated Mocks ✅
 
-Before running service and handler tests, generate mocks:
+Mocks have been generated using gomock and are ready to use:
+- `internal/implementations/mocks/mock_repository.go` - Repository interface mocks
+- `internal/implementations/mocks/mock_service.go` - Service interface mocks
+
+To regenerate mocks (if interfaces change):
 
 ```bash
 # Install mockgen if not already installed
 go install go.uber.org/mock/mockgen@latest
 
-# Generate repository mocks
+# Regenerate repository mocks
 mockgen -source=internal/interfaces/repository.go \
     -destination=internal/implementations/mocks/mock_repository.go \
     -package=mocks
 
-# Generate service mocks
+# Regenerate service mocks
 mockgen -source=internal/interfaces/service.go \
     -destination=internal/implementations/mocks/mock_service.go \
-    -package=mocks
-
-# Generate handler mocks (if needed)
-mockgen -source=internal/interfaces/handler.go \
-    -destination=internal/implementations/mocks/mock_handler.go \
     -package=mocks
 ```
 

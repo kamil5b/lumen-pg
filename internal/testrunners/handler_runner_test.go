@@ -3,6 +3,7 @@ package testrunners
 import (
 	"testing"
 
+	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 	"github.com/kamil5b/lumen-pg/internal/interfaces"
 	"go.uber.org/mock/gomock"
 )
@@ -17,28 +18,34 @@ func AuthHandlerRunner(t *testing.T, constructor AuthHandlerConstructor) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// Create mocks
+	mockAuthService := mocks.NewMockAuthService(ctrl)
+
+	// Create handler with mocks
+	_ = constructor(mockAuthService)
+
 	t.Run("POST /login - success returns cookies and redirects", func(t *testing.T) {
-		t.Skip("Requires mock implementation - run mockgen to generate mocks")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test successful login with cookie setting
 	})
 
 	t.Run("POST /login - failure returns error message", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test failed login
 	})
 
 	t.Run("POST /login - no accessible resources", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test login with no accessible resources
 	})
 
 	t.Run("POST /logout - clears cookies and redirects", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test logout flow
 	})
 
 	t.Run("GET /login - displays login form", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test login page display
 	})
 }
@@ -57,38 +64,46 @@ func MainViewHandlerRunner(t *testing.T, constructor MainViewHandlerConstructor)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// Create mocks
+	mockDataExplorerService := mocks.NewMockDataExplorerService(ctrl)
+	mockMetadataService := mocks.NewMockMetadataService(ctrl)
+	mockTransactionService := mocks.NewMockTransactionService(ctrl)
+
+	// Create handler with mocks
+	_ = constructor(mockDataExplorerService, mockMetadataService, mockTransactionService)
+
 	t.Run("GET / - displays first accessible table", func(t *testing.T) {
-		t.Skip("Requires mock implementation - run mockgen to generate mocks")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test main view with first table loaded
 	})
 
 	t.Run("GET /table/:schema/:name - loads specific table", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test table selection
 	})
 
 	t.Run("POST /filter - applies WHERE clause", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test filtering
 	})
 
 	t.Run("GET /table/:schema/:name/sort - sorts by column", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test sorting
 	})
 
 	t.Run("GET /table/:schema/:name/page - infinite scroll pagination", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test pagination
 	})
 
 	t.Run("GET /pk-references - shows referencing tables", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test PK navigation
 	})
 
 	t.Run("GET /fk-navigate - navigates to parent table", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test FK navigation
 	})
 }
@@ -103,38 +118,44 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// Create mocks
+	mockQueryService := mocks.NewMockQueryService(ctrl)
+
+	// Create handler with mocks
+	_ = constructor(mockQueryService)
+
 	t.Run("GET /query - displays query editor", func(t *testing.T) {
-		t.Skip("Requires mock implementation - run mockgen to generate mocks")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test query editor page
 	})
 
 	t.Run("POST /query/execute - executes single query", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test single query execution
 	})
 
 	t.Run("POST /query/execute - executes multiple queries", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test multiple query execution
 	})
 
 	t.Run("POST /query/execute - returns error for invalid query", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test error handling
 	})
 
 	t.Run("POST /query/execute - SELECT returns paginated results", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test SELECT with pagination (hard limit 1000 rows)
 	})
 
 	t.Run("POST /query/execute - DDL returns success message", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test DDL execution
 	})
 
 	t.Run("POST /query/execute - DML returns affected rows", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test DML execution
 	})
 }
@@ -149,18 +170,24 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// Create mocks
+	mockMetadataService := mocks.NewMockMetadataService(ctrl)
+
+	// Create handler with mocks
+	_ = constructor(mockMetadataService)
+
 	t.Run("GET /erd - displays ERD viewer page", func(t *testing.T) {
-		t.Skip("Requires mock implementation - run mockgen to generate mocks")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test ERD viewer page
 	})
 
 	t.Run("GET /erd/data - returns ERD JSON data", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test ERD data retrieval
 	})
 
 	t.Run("GET /erd/table/:schema/:name - returns table details", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test table details panel
 	})
 }
@@ -175,43 +202,49 @@ func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstr
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// Create mocks
+	mockTransactionService := mocks.NewMockTransactionService(ctrl)
+
+	// Create handler with mocks
+	_ = constructor(mockTransactionService)
+
 	t.Run("POST /transaction/start - starts transaction", func(t *testing.T) {
-		t.Skip("Requires mock implementation - run mockgen to generate mocks")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test transaction start
 	})
 
 	t.Run("POST /transaction/buffer - buffers operation", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test operation buffering
 	})
 
 	t.Run("POST /transaction/commit - commits operations", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test commit
 	})
 
 	t.Run("POST /transaction/rollback - discards operations", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test rollback
 	})
 
 	t.Run("GET /transaction/state - returns current state", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test state retrieval
 	})
 
 	t.Run("POST /transaction/edit-cell - buffers cell edit", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test cell editing in transaction mode
 	})
 
 	t.Run("POST /transaction/delete-row - buffers row delete", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test row deletion in transaction mode
 	})
 
 	t.Run("POST /transaction/insert-row - buffers row insert", func(t *testing.T) {
-		t.Skip("Requires mock implementation")
+		t.Skip("TODO: Implement test with mock expectations")
 		// Test row insertion in transaction mode
 	})
 }
