@@ -20,7 +20,7 @@ type MetadataRepositoryConstructor func(db *sql.DB) repository.MetadataRepositor
 // MetadataRepositoryRunner runs all metadata repository tests against an implementation
 // Maps to TEST_PLAN.md:
 // - Story 1: Setup & Configuration [UC-S1-05~07, IT-S1-02~04]
-// - Story 3: ERD Viewer [UC-S3-01, IT-S3-01~02] (See erd_runner_test.go for full Story 3 coverage)
+// - Story 3: ERD Viewer [UC-S3-01, IT-S3-01~02]
 // - Story 5: Main View & Data Interaction [UC-S5-01, IT-S5-01~07]
 func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstructor) {
 	t.Helper()
