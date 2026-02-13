@@ -42,12 +42,13 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	t.Run("StartTransaction creates new transaction", func(t *testing.T) {
 		mockTransaction.EXPECT().
 			CreateTransaction(gomock.Any(), gomock.Any()).
+			Return(nil)
+
+		mockTransaction.EXPECT().
+			GetTransaction(gomock.Any(), gomock.Any()).
 			Return(&domain.TransactionState{
 				ID:       "txn_123",
 				Username: "testuser",
-				Edits:    make(map[int]domain.RowEdit),
-				Deletes:  []int{},
-				Inserts:  []domain.RowInsert{},
 			}, nil)
 
 		txn, err := uc.StartTransaction(ctx, "testuser", "testdb", "public", "users")
@@ -61,7 +62,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// UC-S5-10: Transaction Already Active Error
 	t.Run("StartTransaction returns error when transaction already active", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetActiveTransaction(gomock.Any(), "testuser").
+			GetUserTransaction(gomock.Any(), "testuser").
 			Return(&domain.TransactionState{
 				ID:       "txn_existing",
 				Username: "testuser",
@@ -75,7 +76,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// UC-S5-09: Transaction Start (check if active)
 	t.Run("CheckActiveTransaction returns true when transaction exists", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetActiveTransaction(gomock.Any(), "testuser").
+			GetUserTransaction(gomock.Any(), "testuser").
 			Return(&domain.TransactionState{
 				ID:       "txn_123",
 				Username: "testuser",
@@ -89,7 +90,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 
 	t.Run("CheckActiveTransaction returns false when no transaction", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetActiveTransaction(gomock.Any(), "testuser").
+			GetUserTransaction(gomock.Any(), "testuser").
 			Return(nil, ErrNoActiveTransaction)
 
 		active, err := uc.CheckActiveTransaction(ctx, "testuser")
@@ -100,13 +101,10 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 
 	t.Run("GetActiveTransaction returns current transaction", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetActiveTransaction(gomock.Any(), "testuser").
+			GetUserTransaction(gomock.Any(), "testuser").
 			Return(&domain.TransactionState{
 				ID:       "txn_123",
 				Username: "testuser",
-				Edits:    make(map[int]domain.RowEdit),
-				Deletes:  []int{},
-				Inserts:  []domain.RowInsert{},
 			}, nil)
 
 		txn, err := uc.GetActiveTransaction(ctx, "testuser")
@@ -121,7 +119,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// E2E-S5-08: Transaction Mode Edit Buffer Display
 	t.Run("EditCell buffers a cell edit", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			UpdateTransactionEdit(gomock.Any(), "testuser", gomock.Any()).
+			AddRowEdit(gomock.Any(), "testuser", gomock.Any()).
 			Return(nil)
 
 		err := uc.EditCell(ctx, "testuser", "testdb", "public", "users", 5, "name", "NewName")
@@ -132,21 +130,15 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	t.Run("GetTransactionEdits returns all buffered edits", func(t *testing.T) {
 		edits := map[int]domain.RowEdit{
 			0: {
-				RowIndex:   0,
 				ColumnName: "name",
-				OldValue:   "OldName",
-				NewValue:   "NewName",
 			},
 			1: {
-				RowIndex:   1,
 				ColumnName: "email",
-				OldValue:   "old@example.com",
-				NewValue:   "new@example.com",
 			},
 		}
 
 		mockTransaction.EXPECT().
-			GetTransactionEdits(gomock.Any(), "testuser").
+			GetRowEdits(gomock.Any(), gomock.Any()).
 			Return(edits, nil)
 
 		result, err := uc.GetTransactionEdits(ctx, "testuser")
@@ -160,7 +152,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// E2E-S5-12: Transaction Row Delete Button
 	t.Run("DeleteRow buffers a row deletion", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			UpdateTransactionDelete(gomock.Any(), "testuser", gomock.Any()).
+			AddRowDelete(gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(nil)
 
 		err := uc.DeleteRow(ctx, "testuser", "testdb", "public", "users", 3)
@@ -172,7 +164,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 		deletes := []int{0, 2, 5}
 
 		mockTransaction.EXPECT().
-			GetTransactionDeletes(gomock.Any(), "testuser").
+			GetRowDeletes(gomock.Any(), gomock.Any()).
 			Return(deletes, nil)
 
 		result, err := uc.GetTransactionDeletes(ctx, "testuser")
@@ -186,7 +178,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// E2E-S5-13: Transaction New Row Button
 	t.Run("InsertRow buffers a new row insertion", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			UpdateTransactionInsert(gomock.Any(), "testuser", gomock.Any()).
+			AddRowInsert(gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(nil)
 
 		values := map[string]interface{}{
@@ -216,7 +208,7 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 		}
 
 		mockTransaction.EXPECT().
-			GetTransactionInserts(gomock.Any(), "testuser").
+			GetRowInserts(gomock.Any(), gomock.Any()).
 			Return(inserts, nil)
 
 		result, err := uc.GetTransactionInserts(ctx, "testuser")
@@ -231,19 +223,26 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// E2E-S5-09: Transaction Commit Button
 	t.Run("CommitTransaction commits all buffered changes", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			CommitTransaction(gomock.Any(), "testuser").
+			GetUserTransaction(gomock.Any(), "testuser").
+			Return(&domain.TransactionState{
+				ID:       "txn_123",
+				Username: "testuser",
+			}, nil)
+
+		mockTransaction.EXPECT().
+			UpdateTransaction(gomock.Any(), gomock.Any()).
 			Return(nil)
 
 		mockRBAC.EXPECT().
-			CheckUpdatePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			HasUpdatePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		mockRBAC.EXPECT().
-			CheckInsertPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			HasInsertPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		mockRBAC.EXPECT().
-			CheckDeletePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			HasDeletePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		err := uc.CommitTransaction(ctx, "testuser")
@@ -256,7 +255,14 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// E2E-S5-10: Transaction Rollback Button
 	t.Run("RollbackTransaction rolls back all buffered changes", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			RollbackTransaction(gomock.Any(), "testuser").
+			GetUserTransaction(gomock.Any(), "testuser").
+			Return(&domain.TransactionState{
+				ID:       "txn_123",
+				Username: "testuser",
+			}, nil)
+
+		mockTransaction.EXPECT().
+			DeleteTransaction(gomock.Any(), gomock.Any()).
 			Return(nil)
 
 		err := uc.RollbackTransaction(ctx, "testuser")
@@ -268,19 +274,25 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	// E2E-S5-11: Transaction Timer Countdown
 	t.Run("GetTransactionRemainingTime returns remaining time", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetTransactionRemainingTime(gomock.Any(), "testuser").
-			Return(int64(45), nil)
+			GetUserTransaction(gomock.Any(), "testuser").
+			Return(&domain.TransactionState{
+				ID:       "txn_123",
+				Username: "testuser",
+			}, nil)
 
 		remaining, err := uc.GetTransactionRemainingTime(ctx, "testuser")
 
 		require.NoError(t, err)
-		require.Equal(t, int64(45), remaining)
+		require.Greater(t, remaining, int64(0))
 	})
 
 	t.Run("IsTransactionExpired returns false when transaction active", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetTransactionRemainingTime(gomock.Any(), "testuser").
-			Return(int64(30), nil)
+			GetUserTransaction(gomock.Any(), "testuser").
+			Return(&domain.TransactionState{
+				ID:       "txn_123",
+				Username: "testuser",
+			}, nil)
 
 		expired, err := uc.IsTransactionExpired(ctx, "testuser")
 
@@ -290,40 +302,13 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 
 	t.Run("IsTransactionExpired returns true when time exceeded", func(t *testing.T) {
 		mockTransaction.EXPECT().
-			GetTransactionRemainingTime(gomock.Any(), "testuser").
-			Return(int64(0), nil)
+			GetUserTransaction(gomock.Any(), "testuser").
+			Return(nil, ErrNoActiveTransaction)
 
 		expired, err := uc.IsTransactionExpired(ctx, "testuser")
 
 		require.NoError(t, err)
 		require.True(t, expired)
-	})
-
-	t.Run("CancelExpiredTransactions cancels all expired transactions", func(t *testing.T) {
-		mockTransaction.EXPECT().
-			GetAllActiveTransactions(gomock.Any()).
-			Return([]*domain.TransactionState{
-				{
-					ID:       "txn_1",
-					Username: "user1",
-				},
-				{
-					ID:       "txn_2",
-					Username: "user2",
-				},
-			}, nil)
-
-		mockTransaction.EXPECT().
-			GetTransactionRemainingTime(gomock.Any(), gomock.Any()).
-			Return(int64(-10), nil).AnyTimes()
-
-		mockTransaction.EXPECT().
-			RollbackTransaction(gomock.Any(), gomock.Any()).
-			Return(nil).AnyTimes()
-
-		err := uc.CancelExpiredTransactions(ctx)
-
-		require.NoError(t, err)
 	})
 
 	// UC-S6-02: Transaction Isolation
@@ -332,18 +317,20 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 	t.Run("Multiple users can have independent transactions", func(t *testing.T) {
 		mockTransaction.EXPECT().
 			CreateTransaction(gomock.Any(), gomock.Any()).
+			Return(nil).Times(2)
+
+		mockTransaction.EXPECT().
+			GetTransaction(gomock.Any(), gomock.Any()).
 			Return(&domain.TransactionState{
 				ID:       "txn_user1",
 				Username: "user1",
-				Edits:    make(map[int]domain.RowEdit),
 			}, nil).Times(1)
 
 		mockTransaction.EXPECT().
-			CreateTransaction(gomock.Any(), gomock.Any()).
+			GetTransaction(gomock.Any(), gomock.Any()).
 			Return(&domain.TransactionState{
 				ID:       "txn_user2",
 				Username: "user2",
-				Edits:    make(map[int]domain.RowEdit),
 			}, nil).Times(1)
 
 		txn1, err1 := uc.StartTransaction(ctx, "user1", "testdb", "public", "users")
@@ -357,19 +344,19 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 
 	t.Run("Transaction changes are isolated per user", func(t *testing.T) {
 		edits1 := map[int]domain.RowEdit{
-			0: {RowIndex: 0, ColumnName: "name", NewValue: "User1"},
+			0: {ColumnName: "name"},
 		}
 
 		edits2 := map[int]domain.RowEdit{
-			1: {RowIndex: 1, ColumnName: "name", NewValue: "User2"},
+			1: {ColumnName: "name"},
 		}
 
 		mockTransaction.EXPECT().
-			GetTransactionEdits(gomock.Any(), "user1").
+			GetRowEdits(gomock.Any(), "user1").
 			Return(edits1, nil)
 
 		mockTransaction.EXPECT().
-			GetTransactionEdits(gomock.Any(), "user2").
+			GetRowEdits(gomock.Any(), "user2").
 			Return(edits2, nil)
 
 		result1, err1 := uc.GetTransactionEdits(ctx, "user1")

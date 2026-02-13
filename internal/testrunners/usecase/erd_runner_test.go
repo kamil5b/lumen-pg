@@ -77,7 +77,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		erdData, err := uc.GenerateERD(ctx, "testuser", "testdb", "public")
@@ -121,7 +121,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		tables, err := uc.GetERDTables(ctx, "testuser", "testdb", "public")
@@ -157,7 +157,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil)
 
 		tableData, err := uc.GetTableBoxData(ctx, "testuser", "testdb", "public", "users")
@@ -206,7 +206,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		relationships, err := uc.GetERDRelationships(ctx, "testuser", "testdb", "public")
@@ -250,7 +250,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		lines, err := uc.GetRelationshipLines(ctx, "testuser", "testdb", "public")
@@ -272,10 +272,6 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 					},
 				},
 			}, nil)
-
-		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil)
 
 		isEmpty, err := uc.IsSchemaEmpty(ctx, "testuser", "testdb", "empty_schema")
 
@@ -302,10 +298,6 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 					},
 				},
 			}, nil)
-
-		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil)
 
 		isEmpty, err := uc.IsSchemaEmpty(ctx, "testuser", "testdb", "public")
 
@@ -348,7 +340,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckSchemaAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			HasSchemaUsagePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		schemas, err := uc.GetAvailableSchemas(ctx, "testuser", "testdb")
@@ -435,7 +427,7 @@ func ERDUsecaseRunner(t *testing.T, constructor ERDUsecaseConstructor) {
 			}, nil)
 
 		mockRBAC.EXPECT().
-			CheckTableAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(true, nil).AnyTimes()
 
 		erdData, err := uc.GenerateERD(ctx, "testuser", "testdb", "public")

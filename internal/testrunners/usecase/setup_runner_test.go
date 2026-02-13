@@ -159,7 +159,7 @@ func SetupUsecaseRunner(t *testing.T, constructor SetupUsecaseConstructor) {
 			Return([]string{"postgres", "testuser", "readonly"}, nil)
 
 		mockRBAC.EXPECT().
-			GetRoleAccessibility(gomock.Any(), gomock.Any()).
+			GetRoleMetadata(gomock.Any(), gomock.Any()).
 			Return(&domain.RoleMetadata{
 				Name:                "testuser",
 				AccessibleDatabases: []string{"testdb"},
@@ -198,9 +198,9 @@ func SetupUsecaseRunner(t *testing.T, constructor SetupUsecaseConstructor) {
 		require.GreaterOrEqual(t, len(roles), 3)
 	})
 
-	t.Run("GetRoleAccessibility returns role metadata", func(t *testing.T) {
+	t.Run("GetRoleMetadata returns role metadata", func(t *testing.T) {
 		mockRBAC.EXPECT().
-			GetRoleAccessibility(gomock.Any(), "testuser").
+			GetRoleMetadata(gomock.Any(), "testuser").
 			Return(&domain.RoleMetadata{
 				Name:                "testuser",
 				AccessibleDatabases: []string{"testdb1", "testdb2"},
@@ -273,7 +273,7 @@ func SetupUsecaseRunner(t *testing.T, constructor SetupUsecaseConstructor) {
 			Return([]string{"testuser"}, nil)
 
 		mockRBAC.EXPECT().
-			GetRoleAccessibility(gomock.Any(), gomock.Any()).
+			GetRoleMetadata(gomock.Any(), gomock.Any()).
 			Return(&domain.RoleMetadata{
 				Name:                "testuser",
 				AccessibleDatabases: []string{"testdb"},

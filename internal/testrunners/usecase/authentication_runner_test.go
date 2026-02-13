@@ -110,7 +110,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 			Return(nil)
 
 		mockRBAC.EXPECT().
-			GetUserAccessibleDatabases(gomock.Any(), "testuser").
+			GetAccessibleDatabases(gomock.Any(), "testuser").
 			Return([]string{"testdb"}, nil)
 
 		response, err := uc.Login(ctx, domain.LoginRequest{
@@ -130,23 +130,23 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 	// E2E-S2-01: Login Flow with Connection Probe
 	t.Run("CreateSession creates new session with encrypted password", func(t *testing.T) {
 		mockSession.EXPECT().
-			StoreSession(gomock.Any(), gomock.Any()).
+			CreateSession(gomock.Any(), gomock.Any()).
 			Return(nil)
 
 		mockEncryption.EXPECT().
-			EncryptPassword(gomock.Any(), "password123").
+			Encrypt(gomock.Any(), "password123").
 			Return("encrypted_password", nil)
 
 		mockRBAC.EXPECT().
-			GetUserAccessibleDatabases(gomock.Any(), "testuser").
+			GetAccessibleDatabases(gomock.Any(), "testuser").
 			Return([]string{"testdb"}, nil)
 
 		mockRBAC.EXPECT().
-			GetUserAccessibleSchemas(gomock.Any(), "testuser", "testdb").
+			GetAccessibleSchemas(gomock.Any(), "testuser", "testdb").
 			Return([]string{"public"}, nil)
 
 		mockRBAC.EXPECT().
-			GetUserAccessibleTables(gomock.Any(), "testuser", "testdb", "public").
+			GetAccessibleTables(gomock.Any(), "testuser", "testdb", "public").
 			Return([]domain.AccessibleTable{
 				{Database: "testdb", Schema: "public", Name: "users", HasSelect: true},
 			}, nil)
@@ -238,7 +238,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 		}
 
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "session_123").
+			ValidateSession(gomock.Any(), "session_123").
 			Return(expectedSession, nil)
 
 		session, err := uc.ValidateSession(ctx, "session_123")
@@ -251,7 +251,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 	// UC-S2-09: Session Validation - Expired Session
 	t.Run("ValidateSession returns error for expired session", func(t *testing.T) {
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "expired_session").
+			ValidateSession(gomock.Any(), "expired_session").
 			Return(nil, ErrSessionExpired)
 
 		session, err := uc.ValidateSession(ctx, "expired_session")
@@ -268,7 +268,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 		}
 
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "session_123").
+			ValidateSession(gomock.Any(), "session_123").
 			Return(oldSession, nil)
 
 		mockSession.EXPECT().
@@ -295,15 +295,8 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 
 	// UC-S2-13: Header Username Display
 	t.Run("GetSessionUser returns user for valid session", func(t *testing.T) {
-		expectedUser := &domain.User{
-			Username:     "testuser",
-			DatabaseName: "testdb",
-			SchemaName:   "public",
-			TableName:    "users",
-		}
-
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "session_123").
+			ValidateSession(gomock.Any(), "session_123").
 			Return(&domain.Session{
 				ID:       "session_123",
 				Username: "testuser",
@@ -331,7 +324,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 	// E2E-S2-05: Protected Route Access Without Auth
 	t.Run("IsUserAuthenticated returns true for valid session", func(t *testing.T) {
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "session_123").
+			ValidateSession(gomock.Any(), "session_123").
 			Return(&domain.Session{
 				ID:       "session_123",
 				Username: "testuser",
@@ -345,7 +338,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 
 	t.Run("IsUserAuthenticated returns false for invalid session", func(t *testing.T) {
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "invalid_session").
+			ValidateSession(gomock.Any(), "invalid_session").
 			Return(nil, ErrSessionNotFound)
 
 		authenticated, err := uc.IsUserAuthenticated(ctx, "invalid_session")
@@ -357,7 +350,7 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 	// UC-S2-15: Metadata Refresh Button
 	t.Run("ReAuthenticateWithPassword verifies encrypted password", func(t *testing.T) {
 		mockEncryption.EXPECT().
-			DecryptPassword(gomock.Any(), "encrypted_password").
+			Decrypt(gomock.Any(), "encrypted_password").
 			Return("password123", nil)
 
 		mockDatabase.EXPECT().
@@ -373,17 +366,31 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 	// IT-S2-05: Concurrent User Sessions with Isolated Resources
 	t.Run("Multiple sessions remain isolated", func(t *testing.T) {
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "session_user1").
+			ValidateSession(gomock.Any(), "session_user1").
 			Return(&domain.Session{
 				ID:       "session_user1",
 				Username: "user1",
 			}, nil).AnyTimes()
 
 		mockSession.EXPECT().
-			GetSession(gomock.Any(), "session_user2").
+			ValidateSession(gomock.Any(), "session_user2").
 			Return(&domain.Session{
 				ID:       "session_user2",
 				Username: "user2",
+			}, nil).AnyTimes()
+
+		mockMetadata.EXPECT().
+			GetRoleMetadata(gomock.Any(), "user1").
+			Return(&domain.RoleMetadata{
+				Name:                "user1",
+				AccessibleDatabases: []string{"db1"},
+			}, nil).AnyTimes()
+
+		mockMetadata.EXPECT().
+			GetRoleMetadata(gomock.Any(), "user2").
+			Return(&domain.RoleMetadata{
+				Name:                "user2",
+				AccessibleDatabases: []string{"db2"},
 			}, nil).AnyTimes()
 
 		user1, err1 := uc.GetSessionUser(ctx, "session_user1")

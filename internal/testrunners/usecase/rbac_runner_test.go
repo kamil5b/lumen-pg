@@ -269,15 +269,6 @@ func RBACUsecaseRunner(t *testing.T, constructor RBACUsecaseConstructor) {
 	})
 
 	t.Run("GetTablePermissions returns complete permission set", func(t *testing.T) {
-		expectedPerms := &domain.PermissionSet{
-			CanSelect:  true,
-			CanInsert:  true,
-			CanUpdate:  true,
-			CanDelete:  false,
-			CanConnect: true,
-			CanUsage:   true,
-		}
-
 		mockMetadata.EXPECT().
 			GetTablePermissions(gomock.Any(), "testuser", "testdb", "public", "users").
 			Return(&domain.AccessibleTable{
@@ -291,7 +282,7 @@ func RBACUsecaseRunner(t *testing.T, constructor RBACUsecaseConstructor) {
 
 		require.NoError(t, err)
 		require.NotNil(t, perms)
-		require.Equal(t, expectedPerms.CanSelect, perms.CanSelect)
+		require.True(t, perms.CanSelect)
 	})
 
 	// UC-S6-01: Session Isolation
