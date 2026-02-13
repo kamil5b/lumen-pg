@@ -14,12 +14,16 @@ import (
 type CacheRepositoryConstructor func() repository.CacheRepository
 
 // CacheRepositoryRunner runs all cache repository tests against an implementation
+// Maps to TEST_PLAN.md:
+// - Story 1: Setup & Configuration [IT-S1-04: Cache Accessible Resources Per Role]
+// - Story 7: Security & Best Practices [UC-S7-06, UC-S7-07: Session Timeout Cookies]
 func CacheRepositoryRunner(t *testing.T, constructor CacheRepositoryConstructor) {
 	t.Helper()
 
 	ctx := context.Background()
 	repo := constructor()
 
+	// IT-S1-04: Cache Accessible Resources Per Role
 	t.Run("Set and Get value", func(t *testing.T) {
 		err := repo.Set(ctx, "key1", "value1", 3600)
 		require.NoError(t, err)

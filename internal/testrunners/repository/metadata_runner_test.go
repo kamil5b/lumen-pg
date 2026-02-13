@@ -18,6 +18,10 @@ import (
 type MetadataRepositoryConstructor func(db *sql.DB) repository.MetadataRepository
 
 // MetadataRepositoryRunner runs all metadata repository tests against an implementation
+// Maps to TEST_PLAN.md:
+// - Story 1: Setup & Configuration [UC-S1-05~07, IT-S1-02~04]
+// - Story 3: ERD Viewer [UC-S3-01, IT-S3-01~02] (See erd_runner_test.go for full Story 3 coverage)
+// - Story 5: Main View & Data Interaction [UC-S5-01, IT-S5-01~07]
 func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstructor) {
 	t.Helper()
 
@@ -44,6 +48,10 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 
 	repo := constructor(db)
 
+	// UC-S1-05: Metadata Initialization - Roles and Permissions
+	// UC-S1-06: In-Memory Metadata Storage - Per Role
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-02: Load Real Database Metadata with User Accessible Resources
 	t.Run("StoreMetadata and GetMetadata", func(t *testing.T) {
 		metadata := &domain.DatabaseMetadata{
 			Name: "testdb",
@@ -91,6 +99,8 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.Error(t, err)
 	})
 
+	// UC-S1-05: Metadata Initialization - Roles and Permissions
+	// IT-S1-03: Load Real Relations and Role Access
 	t.Run("StoreRoleMetadata and GetRoleMetadata", func(t *testing.T) {
 		roleMetadata := &domain.RoleMetadata{
 			Name:                "test_role",
@@ -125,6 +135,8 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.Error(t, err)
 	})
 
+	// UC-S1-06: In-Memory Metadata Storage - Per Role
+	// IT-S1-04: Cache Accessible Resources Per Role
 	t.Run("StoreAllRolesMetadata and GetAllRolesMetadata", func(t *testing.T) {
 		roles := map[string]*domain.RoleMetadata{
 			"role1": {
@@ -150,6 +162,7 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.GreaterOrEqual(t, len(retrieved), 2)
 	})
 
+	// UC-S2-15: Metadata Refresh Button
 	t.Run("InvalidateMetadata", func(t *testing.T) {
 		metadata := &domain.DatabaseMetadata{
 			Name:    "testdb_invalidate",
@@ -200,6 +213,8 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.Error(t, err)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-02: Load Real Database Metadata with User Accessible Resources
 	t.Run("GetAccessibleDatabases", func(t *testing.T) {
 		roleMetadata := &domain.RoleMetadata{
 			Name:                "db_access_role",
@@ -217,6 +232,8 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.GreaterOrEqual(t, len(databases), 3)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-03: Load Real Relations and Role Access
 	t.Run("GetAccessibleSchemas", func(t *testing.T) {
 		roleMetadata := &domain.RoleMetadata{
 			Name:                "schema_access_role",
@@ -234,6 +251,9 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.GreaterOrEqual(t, len(schemas), 2)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// UC-S3-01: ERD Data Generation
+	// IT-S1-04: Cache Accessible Resources Per Role
 	t.Run("GetAccessibleTables", func(t *testing.T) {
 		roleMetadata := &domain.RoleMetadata{
 			Name:                "table_access_role",
@@ -270,6 +290,8 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.GreaterOrEqual(t, len(tables), 2)
 	})
 
+	// UC-S5-01: Table Data Loading
+	// IT-S5-01: Real Table Data Loading
 	t.Run("IsTableAccessible returns true for accessible table", func(t *testing.T) {
 		roleMetadata := &domain.RoleMetadata{
 			Name:                "table_check_role",
@@ -312,6 +334,9 @@ func MetadataRepositoryRunner(t *testing.T, constructor MetadataRepositoryConstr
 		require.False(t, accessible)
 	})
 
+	// UC-S5-19: Read-Only Mode Enforcement
+	// IT-S5-06: Real Foreign Key Navigation
+	// IT-S5-07: Real Primary Key Navigation
 	t.Run("GetTablePermissions", func(t *testing.T) {
 		expectedPerms := &domain.AccessibleTable{
 			Database:  "testdb",

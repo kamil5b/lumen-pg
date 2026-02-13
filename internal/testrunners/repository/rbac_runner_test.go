@@ -17,6 +17,12 @@ import (
 type RBACRepositoryConstructor func(db *sql.DB) repository.RBACRepository
 
 // RBACRepositoryRunner runs all RBAC repository tests against an implementation
+// Maps to TEST_PLAN.md:
+// - Story 1: Setup & Configuration [UC-S1-07, IT-S1-01~04]
+// - Story 2: Authentication & Identity [IT-S2-03]
+// - Story 5: Main View & Data Interaction [UC-S5-19, IT-S5-06~07]
+// - Story 6: Isolation [UC-S6-01~03, IT-S6-01~03]
+// - Story 7: Security & Best Practices [UC-S7-01~02, IT-S7-01]
 func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 	t.Helper()
 
@@ -64,6 +70,9 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 
 	repo := constructor(db)
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-01: Connect to Real PostgreSQL
+	// IT-S2-03: Real Role-Based Resource Access
 	t.Run("GetUserRole returns role for user", func(t *testing.T) {
 		role, err := repo.GetUserRole(ctx, "testuser")
 		require.NoError(t, err)
@@ -75,6 +84,7 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Error(t, err)
 	})
 
+	// UC-S1-05: Metadata Initialization - Roles and Permissions
 	t.Run("GetAllRoles returns list of roles", func(t *testing.T) {
 		roles, err := repo.GetAllRoles(ctx)
 		require.NoError(t, err)
@@ -82,6 +92,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Greater(t, len(roles), 0)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-03: Load Real Relations and Role Access
 	t.Run("GetRolePermissions returns permission set for role", func(t *testing.T) {
 		perms, err := repo.GetRolePermissions(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
@@ -93,6 +105,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Error(t, err)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// UC-S5-19: Read-Only Mode Enforcement
 	t.Run("HasSelectPermission returns true for granted permission", func(t *testing.T) {
 		has, err := repo.HasSelectPermission(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
@@ -105,24 +119,29 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.False(t, has)
 	})
 
+	// UC-S5-19: Read-Only Mode Enforcement
 	t.Run("HasInsertPermission returns correct value", func(t *testing.T) {
 		has, err := repo.HasInsertPermission(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
 		require.Equal(t, false, has)
 	})
 
+	// UC-S5-19: Read-Only Mode Enforcement
 	t.Run("HasUpdatePermission returns correct value", func(t *testing.T) {
 		has, err := repo.HasUpdatePermission(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
 		require.Equal(t, false, has)
 	})
 
+	// UC-S5-19: Read-Only Mode Enforcement
 	t.Run("HasDeletePermission returns correct value", func(t *testing.T) {
 		has, err := repo.HasDeletePermission(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
 		require.Equal(t, false, has)
 	})
 
+	// IT-S1-01: Connect to Real PostgreSQL
+	// IT-S2-03: Real Role-Based Resource Access
 	t.Run("HasDatabaseConnectPermission returns true for granted permission", func(t *testing.T) {
 		has, err := repo.HasDatabaseConnectPermission(ctx, "test_role", "testdb")
 		require.NoError(t, err)
@@ -135,6 +154,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.False(t, has)
 	})
 
+	// IT-S1-02: Load Real Database Metadata with User Accessible Resources
+	// IT-S1-03: Load Real Relations and Role Access
 	t.Run("HasSchemaUsagePermission returns true for granted permission", func(t *testing.T) {
 		has, err := repo.HasSchemaUsagePermission(ctx, "test_role", "testdb", "public")
 		require.NoError(t, err)
@@ -147,6 +168,9 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.False(t, has)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S2-03: Real Role-Based Resource Access
+	// UC-S6-02: Transaction Isolation (role-based access)
 	t.Run("GetAccessibleDatabases returns databases accessible by role", func(t *testing.T) {
 		databases, err := repo.GetAccessibleDatabases(ctx, "test_role")
 		require.NoError(t, err)
@@ -159,6 +183,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Error(t, err)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-04: Cache Accessible Resources Per Role
 	t.Run("GetAccessibleSchemas returns schemas accessible by role", func(t *testing.T) {
 		schemas, err := repo.GetAccessibleSchemas(ctx, "test_role", "testdb")
 		require.NoError(t, err)
@@ -171,6 +197,9 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Error(t, err)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// IT-S1-04: Cache Accessible Resources Per Role
+	// UC-S5-01: Table Data Loading
 	t.Run("GetAccessibleTables returns tables accessible by role", func(t *testing.T) {
 		tables, err := repo.GetAccessibleTables(ctx, "test_role", "testdb", "public")
 		require.NoError(t, err)
@@ -182,6 +211,9 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Error(t, err)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// UC-S2-02: Login Form Validation - Empty Password (permission check)
+	// IT-S6-02: Real Permission Isolation
 	t.Run("CanAccessTable returns true for accessible table", func(t *testing.T) {
 		can, err := repo.CanAccessTable(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
@@ -194,6 +226,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.False(t, can)
 	})
 
+	// UC-S1-05: Metadata Initialization - Roles and Permissions
+	// UC-S1-07: RBAC Initialization with User Accessibility
 	t.Run("GetRoleMetadata returns complete role metadata", func(t *testing.T) {
 		metadata, err := repo.GetRoleMetadata(ctx, "test_role")
 		require.NoError(t, err)
@@ -206,6 +240,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Error(t, err)
 	})
 
+	// UC-S5-19: Read-Only Mode Enforcement
+	// IT-S5-06: Real Foreign Key Navigation (read-only access)
 	t.Run("IsReadOnlyRole returns true for SELECT-only role", func(t *testing.T) {
 		isReadOnly, err := repo.IsReadOnlyRole(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err)
@@ -218,6 +254,9 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.False(t, isReadOnly)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// UC-S6-02: Transaction Isolation (user access validation)
+	// IT-S6-02: Real Permission Isolation
 	t.Run("ValidateUserAccessToResource returns true for accessible resource", func(t *testing.T) {
 		can, err := repo.ValidateUserAccessToResource(ctx, "test_role", "table", "testdb", "public", "test_table")
 		require.NoError(t, err)
@@ -230,6 +269,8 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.False(t, can)
 	})
 
+	// UC-S1-07: RBAC Initialization with User Accessibility
+	// Story 6: Isolation - ensuring consistent permission checks
 	t.Run("Multiple permission checks for same role", func(t *testing.T) {
 		select1, err1 := repo.HasSelectPermission(ctx, "test_role", "testdb", "public", "test_table")
 		require.NoError(t, err1)
@@ -240,6 +281,9 @@ func RBACRepositoryRunner(t *testing.T, constructor RBACRepositoryConstructor) {
 		require.Equal(t, select1, select2)
 	})
 
+	// UC-S6-01: Session Isolation
+	// UC-S6-02: Transaction Isolation (role-based)
+	// IT-S6-02: Real Permission Isolation
 	t.Run("Role accessibility changes reflect correctly", func(t *testing.T) {
 		// Check initial access
 		can1, err := repo.CanAccessTable(ctx, "test_role", "testdb", "public", "test_table")

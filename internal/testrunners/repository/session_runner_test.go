@@ -19,6 +19,10 @@ import (
 type SessionRepositoryConstructor func(db *sql.DB) repository.SessionRepository
 
 // SessionRepositoryRunner runs all session repository tests against an implementation
+// Maps to TEST_PLAN.md:
+// - Story 2: Authentication & Identity [UC-S2-06~10, UC-S2-12, IT-S2-04~05]
+// - Story 6: Isolation [UC-S6-01, UC-S6-03, IT-S6-01~03]
+// - Story 7: Security & Best Practices [UC-S7-06~07, IT-S7-03, E2E-S7-04]
 func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstructor) {
 	t.Helper()
 
@@ -45,6 +49,9 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 
 	repo := constructor(db)
 
+	// UC-S2-06: Session Cookie Creation - Username
+	// UC-S2-08: Session Validation - Valid Session
+	// IT-S2-04: Session Persistence After Probe
 	t.Run("CreateSession and GetSession", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -64,11 +71,14 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Equal(t, session.Username, retrieved.Username)
 	})
 
+	// UC-S2-09: Session Validation - Expired Session
 	t.Run("GetSession returns error for non-existent session", func(t *testing.T) {
 		_, err := repo.GetSession(ctx, "nonexistent_session")
 		require.Error(t, err)
 	})
 
+	// UC-S2-10: Session Re-authentication
+	// IT-S2-04: Session Persistence After Probe
 	t.Run("UpdateSession modifies existing session", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -93,6 +103,8 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Equal(t, newExpiry.Unix(), retrieved.ExpiresAt.Unix())
 	})
 
+	// UC-S2-12: Logout Cookie Clearing
+	// E2E-S2-04: Logout Flow
 	t.Run("DeleteSession removes session", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -112,6 +124,8 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Error(t, err)
 	})
 
+	// UC-S2-08: Session Validation - Valid Session
+	// IT-S2-04: Session Persistence After Probe
 	t.Run("ValidateSession returns valid session", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -130,6 +144,9 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Equal(t, session.ID, validated.ID)
 	})
 
+	// UC-S2-09: Session Validation - Expired Session
+	// UC-S7-06: Session Timeout Short-Lived Cookie
+	// IT-S7-03: Real Session Expiration
 	t.Run("ValidateSession returns error for expired session", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -146,11 +163,15 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Error(t, err)
 	})
 
+	// UC-S2-08: Session Validation - Valid Session
 	t.Run("ValidateSession returns error for non-existent session", func(t *testing.T) {
 		_, err := repo.ValidateSession(ctx, "nonexistent_session")
 		require.Error(t, err)
 	})
 
+	// UC-S2-08: Session Validation - Valid Session
+	// IT-S2-05: Concurrent User Sessions with Isolated Resources
+	// UC-S6-01: Session Isolation
 	t.Run("GetSessionByUsername retrieves most recent session", func(t *testing.T) {
 		now := time.Now()
 		username := "multiuser"
@@ -181,11 +202,15 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Equal(t, "session_2", retrieved.ID)
 	})
 
+	// UC-S2-08: Session Validation - Valid Session
 	t.Run("GetSessionByUsername returns error for non-existent user", func(t *testing.T) {
 		_, err := repo.GetSessionByUsername(ctx, "nonexistent_user")
 		require.Error(t, err)
 	})
 
+	// UC-S2-12: Logout Cookie Clearing
+	// UC-S6-03: Cookie Isolation
+	// E2E-S6-03: One User Cannot See Another's Session
 	t.Run("InvalidateUserSessions removes all user sessions", func(t *testing.T) {
 		now := time.Now()
 		username := "invalidate_user"
@@ -217,6 +242,9 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Error(t, err)
 	})
 
+	// UC-S2-09: Session Validation - Expired Session
+	// UC-S7-06: Session Timeout Short-Lived Cookie
+	// IT-S7-03: Real Session Expiration
 	t.Run("InvalidateExpiredSessions removes expired sessions", func(t *testing.T) {
 		now := time.Now()
 
@@ -251,6 +279,8 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.NotNil(t, retrieved)
 	})
 
+	// UC-S2-08: Session Validation - Valid Session
+	// IT-S2-04: Session Persistence After Probe
 	t.Run("SessionExists returns true for existing session", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -268,12 +298,16 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.True(t, exists)
 	})
 
+	// UC-S2-08: Session Validation - Valid Session
 	t.Run("SessionExists returns false for non-existent session", func(t *testing.T) {
 		exists, err := repo.SessionExists(ctx, "nonexistent_session")
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
 
+	// UC-S2-09: Session Validation - Expired Session
+	// UC-S7-07: Session Timeout Long-Lived Cookie
+	// E2E-S7-04: Session Timeout Enforcement
 	t.Run("SessionExists returns false for expired session", func(t *testing.T) {
 		now := time.Now()
 		session := &domain.Session{
@@ -291,6 +325,9 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.False(t, exists)
 	})
 
+	// IT-S2-05: Concurrent User Sessions with Isolated Resources
+	// UC-S6-01: Session Isolation
+	// E2E-S6-03: One User Cannot See Another's Session
 	t.Run("Multiple sessions for different users", func(t *testing.T) {
 		now := time.Now()
 
@@ -323,6 +360,8 @@ func SessionRepositoryRunner(t *testing.T, constructor SessionRepositoryConstruc
 		require.Equal(t, "user2", session2.Username)
 	})
 
+	// UC-S2-06: Session Cookie Creation - Username
+	// UC-S2-07: Session Cookie Creation - Password
 	t.Run("CreateSession with duplicate ID overwrites previous", func(t *testing.T) {
 		now := time.Now()
 

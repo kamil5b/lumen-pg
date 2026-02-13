@@ -19,6 +19,9 @@ import (
 type TransactionRepositoryConstructor func(db *sql.DB) repository.TransactionRepository
 
 // TransactionRepositoryRunner runs all transaction repository tests against an implementation
+// Maps to TEST_PLAN.md:
+// - Story 5: Main View & Data Interaction [UC-S5-09~19, IT-S5-04~07]
+// - Story 6: Isolation [UC-S6-02, IT-S6-03, E2E-S6-02]
 func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepositoryConstructor) {
 	t.Helper()
 
@@ -45,6 +48,9 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 
 	repo := constructor(db)
 
+	// UC-S5-09: Transaction Start
+	// UC-S5-12: Transaction Commit (foundation)
+	// E2E-S5-06: Start Transaction Button
 	t.Run("CreateTransaction and GetTransaction", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -67,11 +73,14 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Equal(t, txn.Username, retrieved.Username)
 	})
 
+	// UC-S5-10: Transaction Already Active Error
 	t.Run("GetTransaction returns error for non-existent transaction", func(t *testing.T) {
 		_, err := repo.GetTransaction(ctx, "nonexistent_txn")
 		require.Error(t, err)
 	})
 
+	// UC-S5-11: Cell Edit Buffering
+	// UC-S5-14: Transaction Timer Expiration
 	t.Run("UpdateTransaction modifies existing transaction", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -99,6 +108,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.True(t, retrieved.ExpiresAt.After(newExpiry.Add(-1*time.Second)))
 	})
 
+	// UC-S5-13: Transaction Rollback
+	// E2E-S5-10: Transaction Rollback Button
 	t.Run("DeleteTransaction removes transaction", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -121,6 +132,9 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Error(t, err)
 	})
 
+	// UC-S5-09: Transaction Start
+	// UC-S6-02: Transaction Isolation
+	// IT-S6-03: Real Transaction Isolation
 	t.Run("GetUserTransaction retrieves active transaction for user", func(t *testing.T) {
 		now := time.Now()
 		username := "user_txn"
@@ -143,11 +157,15 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Equal(t, username, retrieved.Username)
 	})
 
+	// UC-S5-10: Transaction Already Active Error
 	t.Run("GetUserTransaction returns error for user with no transaction", func(t *testing.T) {
 		_, err := repo.GetUserTransaction(ctx, "user_no_txn")
 		require.Error(t, err)
 	})
 
+	// UC-S5-11: Cell Edit Buffering
+	// E2E-S5-07: Transaction Mode Cell Editing
+	// E2E-S5-08: Transaction Mode Edit Buffer Display
 	t.Run("AddRowEdit buffers cell edit", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -179,6 +197,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, edits, 1)
 	})
 
+	// UC-S5-15: Row Deletion Buffering
+	// E2E-S5-12: Transaction Row Delete Button
 	t.Run("AddRowDelete buffers row deletion", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -204,6 +224,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Contains(t, deletes, 1)
 	})
 
+	// UC-S5-16: Row Insertion Buffering
+	// E2E-S5-13: Transaction New Row Button
 	t.Run("AddRowInsert buffers row insertion", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -235,6 +257,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, inserts, 1)
 	})
 
+	// UC-S5-11: Cell Edit Buffering
+	// IT-S5-04: Real Transaction Commit
 	t.Run("GetRowEdits returns all buffered edits", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -275,6 +299,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, edits, 2)
 	})
 
+	// UC-S5-15: Row Deletion Buffering
+	// IT-S5-05: Real Transaction Rollback
 	t.Run("GetRowDeletes returns all buffered deletions", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -301,6 +327,7 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, deletes, 2)
 	})
 
+	// UC-S5-16: Row Insertion Buffering
 	t.Run("GetRowInserts returns all buffered insertions", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -335,6 +362,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, inserts, 2)
 	})
 
+	// UC-S5-13: Transaction Rollback
+	// E2E-S5-10: Transaction Rollback Button
 	t.Run("ClearRowEdits removes all edits", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -368,6 +397,7 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, edits, 0)
 	})
 
+	// UC-S5-13: Transaction Rollback
 	t.Run("ClearRowDeletes removes all deletions", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -394,6 +424,7 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, deletes, 0)
 	})
 
+	// UC-S5-13: Transaction Rollback
 	t.Run("ClearRowInserts removes all insertions", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -424,6 +455,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, inserts, 0)
 	})
 
+	// UC-S5-09: Transaction Start
+	// IT-S5-04: Real Transaction Commit
 	t.Run("TransactionExists returns true for existing transaction", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -444,12 +477,15 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.True(t, exists)
 	})
 
+	// UC-S5-10: Transaction Already Active Error
 	t.Run("TransactionExists returns false for non-existent transaction", func(t *testing.T) {
 		exists, err := repo.TransactionExists(ctx, "nonexistent_txn")
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
 
+	// UC-S5-14: Transaction Timer Expiration
+	// E2E-S5-11: Transaction Timer Countdown
 	t.Run("TransactionExists returns false for expired transaction", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -470,6 +506,8 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.False(t, exists)
 	})
 
+	// UC-S5-14: Transaction Timer Expiration
+	// IT-S5-04: Real Transaction Commit (cleanup)
 	t.Run("InvalidateExpiredTransactions removes expired transactions", func(t *testing.T) {
 		now := time.Now()
 
@@ -510,6 +548,10 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.NotNil(t, retrieved)
 	})
 
+	// UC-S5-11: Cell Edit Buffering
+	// UC-S5-15: Row Deletion Buffering
+	// UC-S5-16: Row Insertion Buffering
+	// IT-S5-04: Real Transaction Commit
 	t.Run("Mixed transaction operations", func(t *testing.T) {
 		now := time.Now()
 		txn := &domain.TransactionState{
@@ -554,6 +596,9 @@ func TransactionRepositoryRunner(t *testing.T, constructor TransactionRepository
 		require.Len(t, inserts, 1)
 	})
 
+	// UC-S6-02: Transaction Isolation
+	// IT-S6-03: Real Transaction Isolation
+	// E2E-S6-02: Simultaneous Transactions
 	t.Run("Multiple transactions for different users", func(t *testing.T) {
 		now := time.Now()
 

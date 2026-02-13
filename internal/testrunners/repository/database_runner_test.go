@@ -18,6 +18,11 @@ import (
 type DatabaseRepositoryConstructor func(db *sql.DB) repository.DatabaseRepository
 
 // DatabaseRepositoryRunner runs all database repository tests against an implementation
+// Maps to TEST_PLAN.md:
+// - Story 1: Setup & Configuration [UC-S1-01~07, IT-S1-01~04]
+// - Story 4: Manual Query Editor [UC-S4-01~08, IT-S4-01~04]
+// - Story 5: Main View & Data Interaction [UC-S5-01~19, IT-S5-01~07]
+// - Story 7: Security & Best Practices [UC-S7-01, IT-S7-01]
 func DatabaseRepositoryRunner(t *testing.T, constructor DatabaseRepositoryConstructor) {
 	t.Helper()
 
