@@ -19,59 +19,59 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 
 ### Unit Tests
 
-#### UC-S1-01: Connection String Validation
+#### UC-S1-01: Connection String Validation ✅
 - **Given**: Invalid connection string format
 - **When**: Application starts with `-db` flag
 - **Then**: Returns validation error with clear message
 
-#### UC-S1-02: Connection String Parsing
+#### UC-S1-02: Connection String Parsing ✅
 - **Given**: Valid connection string with all parameters
 - **When**: Connection repository parses the string
 - **Then**: Extracts host, port, database, user, password correctly
 
-#### UC-S1-03: Superadmin Connection Test Success
+#### UC-S1-03: Superadmin Connection Test Success ✅
 - **Given**: Valid superadmin credentials
 - **When**: Testing connectivity to PostgreSQL instance
 - **Then**: Returns success without error
 
-#### UC-S1-04: Superadmin Connection Test Failure
+#### UC-S1-04: Superadmin Connection Test Failure ✅
 - **Given**: Invalid superadmin credentials
 - **When**: Testing connectivity to PostgreSQL instance
 - **Then**: Returns connection error
 
-#### UC-S1-05: Metadata Initialization - Roles and Permissions
+#### UC-S1-05: Metadata Initialization - Roles and Permissions ✅
 - **Given**: Valid superadmin connection
 - **When**: Initialize metadata cache
 - **Then**: Fetches all PostgreSQL roles and their permissions on databases, schemas, tables
 
-#### UC-S1-06: In-Memory Metadata Storage - Per Role
+#### UC-S1-06: In-Memory Metadata Storage - Per Role ✅
 - **Given**: Fetched metadata with roles and permissions
 - **When**: Storing in memory
 - **Then**: Caches accessible databases, schemas, tables for each role
 
-#### UC-S1-07: RBAC Initialization with User Accessibility
+#### UC-S1-07: RBAC Initialization with User Accessibility ✅
 - **Given**: PostgreSQL roles with varying permissions
 - **When**: Initialize RBAC
 - **Then**: Maps each role to accessible resources (databases, schemas, tables) and stores in memory
 
 ### Integration Tests
 
-#### IT-S1-01: Connect to Real PostgreSQL
+#### IT-S1-01: Connect to Real PostgreSQL ✅
 - **Given**: Real PostgreSQL instance (testcontainers)
 - **When**: Application starts with valid connection string
 - **Then**: Successfully connects and initializes
 
-#### IT-S1-02: Load Real Database Metadata with User Accessible Resources
+#### IT-S1-02: Load Real Database Metadata with User Accessible Resources ✅
 - **Given**: PostgreSQL with multiple databases, schemas, and roles with different permissions
 - **When**: Loading global metadata during initialization
 - **Then**: Returns all databases, schemas, tables, columns WITH associated role permissions
 
-#### IT-S1-03: Load Real Relations and Role Access
+#### IT-S1-03: Load Real Relations and Role Access ✅
 - **Given**: Tables with foreign key relationships and role-based access
 - **When**: Loading metadata
 - **Then**: Returns all foreign key relationships and which roles can access related tables
 
-#### IT-S1-04: Cache Accessible Resources Per Role
+#### IT-S1-04: Cache Accessible Resources Per Role ✅
 - **Given**: PostgreSQL with multiple roles (admin, editor, viewer)
 - **When**: Loading metadata from roles
 - **Then**: Caches accessible databases, schemas, and tables for each role separately in memory
@@ -82,104 +82,104 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 
 ### Unit Tests
 
-#### UC-S2-01: Login Form Validation - Empty Username
+#### UC-S2-01: Login Form Validation - Empty Username ✅
 - **Given**: Empty username
 - **When**: Attempting login
 - **Then**: Returns validation error
 
-#### UC-S2-02: Login Form Validation - Empty Password
+#### UC-S2-02: Login Form Validation - Empty Password ✅
 - **Given**: Empty password
 - **When**: Attempting login
 - **Then**: Returns validation error
 
-#### UC-S2-03: Login Connection Probe
+#### UC-S2-03: Login Connection Probe ✅
 - **Given**: Valid PostgreSQL credentials
 - **When**: User attempts login
 - **Then**: Probes connection to first accessible database, schema, and table for that user
 
-#### UC-S2-04: Login Connection Probe Failure
+#### UC-S2-04: Login Connection Probe Failure ✅
 - **Given**: User credentials but no accessible tables
 - **When**: Probing connection to first accessible resource
 - **Then**: Returns error (no accessible resources found)
 
-#### UC-S2-05: Login Success After Probe
+#### UC-S2-05: Login Success After Probe ✅
 - **Given**: Valid PostgreSQL credentials and accessible database/schema/table
 - **When**: Connection probe succeeds
 - **Then**: Creates session with cookies and returns first accessible table data
 
-#### UC-S2-06: Session Cookie Creation - Username
+#### UC-S2-06: Session Cookie Creation - Username ✅
 - **Given**: Successful login after probe
 - **When**: Creating cookies
 - **Then**: Sets long-lived cookie with username
 
-#### UC-S2-07: Session Cookie Creation - Password
+#### UC-S2-07: Session Cookie Creation - Password ✅
 - **Given**: Successful login after probe
 - **When**: Creating cookies
 - **Then**: Sets short-lived encrypted cookie with password
 
-#### UC-S2-08: Session Validation - Valid Session
+#### UC-S2-08: Session Validation - Valid Session ✅
 - **Given**: Valid session cookie
 - **When**: Validating session
 - **Then**: Returns success
 
-#### UC-S2-09: Session Validation - Expired Session
+#### UC-S2-09: Session Validation - Expired Session ✅
 - **Given**: Expired session cookie
 - **When**: Validating session
 - **Then**: Returns session expired error
 
-#### UC-S2-10: Session Re-authentication
+#### UC-S2-10: Session Re-authentication ✅
 - **Given**: Encrypted password cookie
 - **When**: Each request
 - **Then**: Re-authenticates with PostgreSQL
 
-#### UC-S2-11: Data Explorer Population After Login
+#### UC-S2-11: Data Explorer Population After Login ✅
 - **Given**: Successful login with connection probe completed
 - **When**: Session created and user redirected to Main View
 - **Then**: Data Explorer sidebar populated with user's accessible databases, schemas, and tables
 
-#### UC-S2-12: Logout Cookie Clearing
+#### UC-S2-12: Logout Cookie Clearing ✅
 - **Given**: Authenticated session
 - **When**: User logs out
 - **Then**: Clears both cookies
 
-#### UC-S2-13: Header Username Display
+#### UC-S2-13: Header Username Display ✅
 - **Given**: Authenticated session
 - **When**: Rendering header
 - **Then**: Displays username on the right
 
-#### UC-S2-14: Navigation Menu Rendering
+#### UC-S2-14: Navigation Menu Rendering ✅
 - **Given**: Authenticated session
 - **When**: Rendering header
 - **Then**: Shows Main View, Manual Query Editor, ERD Viewer
 
-#### UC-S2-15: Metadata Refresh Button
+#### UC-S2-15: Metadata Refresh Button ✅
 - **Given**: Authenticated session with superadmin rights
 - **When**: Clicking refresh button
 - **Then**: Reloads global metadata from DBMS
 
 ### Integration Tests
 
-#### IT-S2-01: Real PostgreSQL Connection Probe
+#### IT-S2-01: Real PostgreSQL Connection Probe ✅
 - **Given**: Real PostgreSQL user with accessible resources
 - **When**: Logging in with valid credentials
 - **Then**: Successfully probes connection to first accessible database, schema, and table
 
-#### IT-S2-02: Real PostgreSQL Connection Probe Failure
+#### IT-S2-02: Real PostgreSQL Connection Probe Failure ✅
 - **Given**: Real PostgreSQL user with no accessible resources
 - **When**: Logging in with valid credentials
 - **Then**: Connection probe fails, login rejected
 
-#### IT-S2-03: Real Role-Based Resource Access
+#### IT-S2-03: Real Role-Based Resource Access ✅
 - **Given**: Multiple PostgreSQL users with different role permissions
 - **When**: Each user logs in
 - **Then**: Returns only databases, schemas, tables accessible to that user
 
-#### IT-S2-04: Session Persistence After Probe
+#### IT-S2-04: Session Persistence After Probe ✅
 - **Given**: Logged in user after successful probe
 - **When**: Making multiple requests
 - **Then**: Session persists and accessible resources remain cached
 
-#### IT-S2-05: Concurrent User Sessions with Isolated Resources
+#### IT-S2-05: Concurrent User Sessions with Isolated Resources ✅
 - **Given**: Multiple users with different credentials and permissions
 - **When**: Logging in simultaneously
 - **Then**: Each has isolated session with separate Data Explorer populated for their accessible resources
@@ -282,79 +282,79 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 
 ### Unit Tests
 
-#### UC-S4-01: Single Query Execution
+#### UC-S4-01: Single Query Execution ✅
 - **Given**: Valid SELECT query
 - **When**: Executing query
 - **Then**: Returns result rows
 
-#### UC-S4-02: Multiple Query Execution
+#### UC-S4-02: Multiple Query Execution ✅
 - **Given**: Multiple queries separated by semicolons
 - **When**: Executing queries
 - **Then**: Executes all queries in sequence
 
-#### UC-S4-03: Query Result Offset Pagination
+#### UC-S4-03: Query Result Offset Pagination ✅
 - **Given**: SELECT query returning many rows
 - **When**: Executing query
 - **Then**: Returns first page (1000 rows max) with offset pagination
 
-#### UC-S4-03a: Query Result Actual Size Display
+#### UC-S4-03a: Query Result Actual Size Display ✅
 - **Given**: SELECT query returning 5000 rows
 - **When**: Executing query
 - **Then**: Shows "Data size: 5000 rows" indicator while only loading first 1000 rows
 
-#### UC-S4-03b: Query Result Limit Hard Cap
+#### UC-S4-03b: Query Result Limit Hard Cap ✅
 - **Given**: SELECT query returning more than 1000 rows
 - **When**: Executing query
 - **Then**: Hard limits to 1000 rows maximum (no more pages beyond this)
 
-#### UC-S4-03c: Offset Pagination Next Page
+#### UC-S4-03c: Offset Pagination Next Page ✅
 - **Given**: Query results with 1000 rows on first page
 - **When**: Requesting next page with offset
 - **Then**: Returns empty or message that limit reached
 
-#### UC-S4-04: DDL Query Execution
+#### UC-S4-04: DDL Query Execution ✅
 - **Given**: CREATE TABLE query
 - **When**: Executing query
 - **Then**: Returns success message
 
-#### UC-S4-05: DML Query Execution
+#### UC-S4-05: DML Query Execution ✅
 - **Given**: INSERT query
 - **When**: Executing query
 - **Then**: Returns affected row count
 
-#### UC-S4-06: Invalid Query Error
+#### UC-S4-06: Invalid Query Error ✅
 - **Given**: Syntax error in query
 - **When**: Executing query
 - **Then**: Returns error message
 
-#### UC-S4-07: Query Splitting
+#### UC-S4-07: Query Splitting ✅
 - **Given**: SQL with semicolons in strings
 - **When**: Splitting queries
 - **Then**: Correctly identifies query boundaries
 
-#### UC-S4-08: Parameterized Query Execution
+#### UC-S4-08: Parameterized Query Execution ✅
 - **Given**: Query with parameters
 - **When**: Executing query
 - **Then**: Uses parameterized execution (no SQL injection)
 
 ### Integration Tests
 
-#### IT-S4-01: Real SELECT Query
+#### IT-S4-01: Real SELECT Query ✅
 - **Given**: Real table with data
 - **When**: Executing SELECT query
 - **Then**: Returns actual rows
 
-#### IT-S4-02: Real DDL Query
+#### IT-S4-02: Real DDL Query ✅
 - **Given**: Real PostgreSQL connection
 - **When**: Executing CREATE TABLE
 - **Then**: Creates table in database
 
-#### IT-S4-03: Real DML Query
+#### IT-S4-03: Real DML Query ✅
 - **Given**: Real table
 - **When**: Executing INSERT/UPDATE/DELETE
 - **Then**: Modifies data and returns count
 
-#### IT-S4-04: Query with Permission Denied
+#### IT-S4-04: Query with Permission Denied ✅
 - **Given**: User without table access
 - **When**: Executing query on restricted table
 - **Then**: Returns permission denied error
@@ -407,97 +407,97 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 
 ### Unit Tests
 
-#### UC-S5-01: Table Data Loading
+#### UC-S5-01: Table Data Loading ✅
 - **Given**: Valid table name
 - **When**: Loading table data
 - **Then**: Returns first 50 rows
 
-#### UC-S5-02: Cursor Pagination Next Page
+#### UC-S5-02: Cursor Pagination Next Page ✅
 - **Given**: Table with 100 rows, user has loaded first 50
 - **When**: Loading next page with cursor (infinite scroll)
 - **Then**: Returns next 50 rows with new cursor
 
-#### UC-S5-03: WHERE Clause Validation
+#### UC-S5-03: WHERE Clause Validation ✅
 - **Given**: Valid WHERE clause fragment
 - **When**: Validating clause
 - **Then**: Returns success
 
-#### UC-S5-04: WHERE Clause Injection Prevention
+#### UC-S5-04: WHERE Clause Injection Prevention ✅
 - **Given**: WHERE clause with SQL injection attempt
 - **When**: Validating clause
 - **Then**: Returns validation error or uses parameterization
 
-#### UC-S5-05: Column Sorting ASC
+#### UC-S5-05: Column Sorting ASC ✅
 - **Given**: Table data
 - **When**: Sorting by column ascending
 - **Then**: Returns sorted data
 
-#### UC-S5-06: Column Sorting DESC
+#### UC-S5-06: Column Sorting DESC ✅
 - **Given**: Table data
 - **When**: Sorting by column descending
 - **Then**: Returns sorted data
 
-#### UC-S5-07: Cursor Pagination Actual Size Display
+#### UC-S5-07: Cursor Pagination Actual Size Display ✅
 - **Given**: Table with 5000 total rows
 - **When**: Loading table data
 - **Then**: Shows "Data size: 5000 rows" indicator while only loading up to 1000 rows
 
-#### UC-S5-08: Cursor Pagination Hard Limit
+#### UC-S5-08: Cursor Pagination Hard Limit ✅
 - **Given**: Table with 1000+ rows loaded via infinite scroll
 - **When**: Reaching hard limit of 1000 rows
 - **Then**: Stops loading more data and shows indication that limit reached
 
-#### UC-S5-09: Transaction Start
+#### UC-S5-09: Transaction Start ✅
 - **Given**: User session without active transaction
 - **When**: Starting transaction
 - **Then**: Transaction becomes active with 1-minute timer
 
-#### UC-S5-10: Transaction Already Active Error
+#### UC-S5-10: Transaction Already Active Error ✅
 - **Given**: User session with active transaction
 - **When**: Attempting to start another transaction
 - **Then**: Returns error
 
-#### UC-S5-11: Cell Edit Buffering
+#### UC-S5-11: Cell Edit Buffering ✅
 - **Given**: Active transaction
 - **When**: Editing cell value
 - **Then**: Operation added to buffer, not committed
 
-#### UC-S5-12: Transaction Commit
+#### UC-S5-12: Transaction Commit ✅
 - **Given**: Active transaction with buffered operations
 - **When**: Committing transaction
 - **Then**: Executes all operations atomically
 
-#### UC-S5-13: Transaction Rollback
+#### UC-S5-13: Transaction Rollback ✅
 - **Given**: Active transaction with buffered operations
 - **When**: Rolling back transaction
 - **Then**: Discards all buffered operations
 
-#### UC-S5-14: Transaction Timer Expiration
+#### UC-S5-14: Transaction Timer Expiration ✅
 - **Given**: Active transaction 1 minute old
 - **When**: Timer expires
 - **Then**: Transaction automatically rolls back
 
-#### UC-S5-15: Row Deletion Buffering
+#### UC-S5-15: Row Deletion Buffering ✅
 - **Given**: Active transaction
 - **When**: Deleting row
 - **Then**: DELETE operation added to buffer
 
-#### UC-S5-16: Row Insertion Buffering
+#### UC-S5-16: Row Insertion Buffering ✅
 - **Given**: Active transaction
 - **When**: Inserting new row
 - **Then**: INSERT operation added to buffer
 
-#### UC-S5-17: Foreign Key Navigation
+#### UC-S5-17: Foreign Key Navigation ✅
 - **Given**: Cell with foreign key value
 - **When**: Clicking cell (not in transaction mode)
 - **Then**: Navigates to parent table
 
-#### UC-S5-18: Primary Key Navigation
+#### UC-S5-18: Primary Key Navigation ✅
 - **Given**: Cell with primary key value
 - **When**: Clicking cell (not in transaction mode)
 - **Then**: Shows modal/panel with list of referencing tables and row counts for each
 
-#### UC-S5-19: Read-Only Mode Enforcement
+#### UC-S5-19: Read-Only Mode Enforcement ✅
 - **Given**: Not in transaction mode
 - **When**: Attempting to edit cell
 - **Then**: Editing is disabled
@@ -519,22 +519,22 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Applying WHERE clause
 - **Then**: Returns filtered results
 
-#### IT-S5-04: Real Transaction Commit
+#### IT-S5-04: Real Transaction Commit ✅
 - **Given**: Real table
 - **When**: Starting transaction, editing cells, committing
 - **Then**: Changes persisted to database
 
-#### IT-S5-05: Real Transaction Rollback
+#### IT-S5-05: Real Transaction Rollback ✅
 - **Given**: Real table
 - **When**: Starting transaction, editing cells, rolling back
 - **Then**: No changes persisted to database
 
-#### IT-S5-06: Real Foreign Key Navigation
+#### IT-S5-06: Real Foreign Key Navigation ✅
 - **Given**: Tables with foreign key relationships
 - **When**: Clicking FK cell
 - **Then**: Loads parent table data
 
-#### IT-S5-07: Real Primary Key Navigation
+#### IT-S5-07: Real Primary Key Navigation ✅
 - **Given**: Tables with FK relationships
 - **When**: Fetching referencing tables for a PK value
 - **Then**: Returns list of referencing tables with accurate row counts for that FK relationship
@@ -642,12 +642,12 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Operating simultaneously
 - **Then**: Sessions do not interfere with each other
 
-#### UC-S6-02: Transaction Isolation
+#### UC-S6-02: Transaction Isolation ✅
 - **Given**: User A and User B both have active transactions
 - **When**: Both make changes
 - **Then**: Changes are isolated per user
 
-#### UC-S6-03: Cookie Isolation
+#### UC-S6-03: Cookie Isolation ✅
 - **Given**: Two different browsers/sessions
 - **When**: Each has different cookies
 - **Then**: Each sees their own session data
@@ -664,7 +664,7 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Both are logged in
 - **Then**: User A sees table X, User B does not
 
-#### IT-S6-03: Real Transaction Isolation
+#### IT-S6-03: Real Transaction Isolation ✅
 - **Given**: User A starts transaction, edits data
 - **When**: User B views same table
 - **Then**: User B does not see User A's uncommitted changes
@@ -692,22 +692,22 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 
 ### Unit Tests
 
-#### UC-S7-01: SQL Injection Prevention - WHERE Clause
+#### UC-S7-01: SQL Injection Prevention - WHERE Clause ✅
 - **Given**: WHERE clause with SQL injection attempt
 - **When**: Executing query
 - **Then**: Uses parameterized query or safely escapes
 
-#### UC-S7-02: SQL Injection Prevention - Query Editor
+#### UC-S7-02: SQL Injection Prevention - Query Editor ✅
 - **Given**: Query with injection attempt
 - **When**: Executing query
 - **Then**: Uses parameterized execution
 
-#### UC-S7-03: Password Encryption in Cookie
+#### UC-S7-03: Password Encryption in Cookie ✅
 - **Given**: User password
 - **When**: Storing in cookie
 - **Then**: Password is encrypted
 
-#### UC-S7-04: Password Decryption from Cookie
+#### UC-S7-04: Password Decryption from Cookie ✅
 - **Given**: Encrypted password cookie
 - **When**: Reading cookie
 - **Then**: Password is correctly decrypted
@@ -717,51 +717,51 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Validating cookie
 - **Then**: Rejects cookie as invalid
 
-#### UC-S7-06: Session Timeout Short-Lived Cookie
+#### UC-S7-06: Session Timeout Short-Lived Cookie ✅
 - **Given**: Session cookie created
 - **When**: Time passes beyond timeout
 - **Then**: Cookie expires automatically
 
-#### UC-S7-07: Session Timeout Long-Lived Cookie
+#### UC-S7-07: Session Timeout Long-Lived Cookie ✅
 - **Given**: Username cookie created
 - **When**: Time passes
 - **Then**: Cookie remains for long duration
 
 ### Integration Tests
 
-#### IT-S7-01: Real SQL Injection Test
+#### IT-S7-01: Real SQL Injection Test ✅
 - **Given**: Real PostgreSQL connection
 - **When**: Attempting SQL injection in WHERE clause
 - **Then**: Injection is prevented
 
-#### IT-S7-02: Real Password Security
+#### IT-S7-02: Real Password Security ✅
 - **Given**: Real password in cookie
 - **When**: Inspecting cookie contents
 - **Then**: Password is not visible in plaintext
 
-#### IT-S7-03: Real Session Expiration
+#### IT-S7-03: Real Session Expiration ✅
 - **Given**: Real session created
 - **When**: Session timeout expires
 - **Then**: Session is invalid and requires re-login
 
 ### E2E Tests
 
-#### E2E-S7-01: SQL Injection via WHERE Bar
+#### E2E-S7-01: SQL Injection via WHERE Bar ✅
 - **Given**: Main view WHERE bar
 - **When**: Entering SQL injection attempt
 - **Then**: Injection is prevented, no unauthorized access
 
-#### E2E-S7-02: SQL Injection via Query Editor
+#### E2E-S7-02: SQL Injection via Query Editor ✅
 - **Given**: Query editor
 - **When**: Entering queries with injection attempts
 - **Then**: Queries execute safely without escalation
 
-#### E2E-S7-03: Cookie Tampering Prevention
+#### E2E-S7-03: Cookie Tampering Prevention ✅
 - **Given**: Authenticated session
 - **When**: Manually tampering with cookie value
 - **Then**: Session becomes invalid, requires re-login
 
-#### E2E-S7-04: Session Timeout Enforcement
+#### E2E-S7-04: Session Timeout Enforcement ✅
 - **Given**: Authenticated session
 - **When**: Waiting beyond session timeout
 - **Then**: Next request redirects to login
@@ -771,7 +771,7 @@ End-to-end tests verify complete user flows through HTTP API with HTMX responses
 - **When**: Creating cookies
 - **Then**: Cookies have Secure flag set
 
-#### E2E-S7-06: HTTPOnly Cookies
+#### E2E-S7-06: HTTPOnly Cookies ✅
 - **Given**: Authentication cookies
 - **When**: Creating cookies
 - **Then**: Cookies have HTTPOnly flag set

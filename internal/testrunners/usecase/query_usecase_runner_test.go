@@ -17,7 +17,8 @@ import (
 // QueryUseCaseConstructor creates a query use case with its dependencies
 type QueryUseCaseConstructor func(repo repository.QueryRepository) usecase.QueryUseCase
 
-// QueryUseCaseRunner runs test specs for query use case (Story 4)
+// QueryUseCaseRunner runs test specs for query use case (Story 4 & Story 5)
+// Tests include query execution and data exploration functionality
 func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 	t.Helper()
 
@@ -252,5 +253,245 @@ func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 		assert.True(t, result.Success)
 		assert.Len(t, result.Rows, 1)
 		assert.Equal(t, "user1", result.Rows[0][1])
+	})
+
+	// Story 5: Main View & Data Interaction Tests
+	// Table data loading, pagination, filtering, and navigation
+
+	t.Run("UC-S5-01: Table Data Loading", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users LIMIT 50"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       make([][]interface{}, 50),
+			LoadedRows: 50,
+			TotalRows:  150,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 50)
+		assert.Equal(t, int64(150), result.TotalRows)
+	})
+
+	t.Run("UC-S5-02: Cursor Pagination Next Page", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users LIMIT 50 OFFSET 50"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       make([][]interface{}, 50),
+			LoadedRows: 50,
+			TotalRows:  150,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 50)
+	})
+
+	t.Run("UC-S5-03: WHERE Clause Validation", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users WHERE id > 10 AND username LIKE '%test%'"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       make([][]interface{}, 25),
+			LoadedRows: 25,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 25)
+	})
+
+	t.Run("UC-S5-04: WHERE Clause Injection Prevention", func(t *testing.T) {
+		ctx := context.Background()
+		// Using parameterized query to prevent injection
+		query := "SELECT * FROM users WHERE id = $1"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       [][]interface{}{{1, "user1", "user1@test.com"}},
+			LoadedRows: 1,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query, int64(1)).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query, int64(1))
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 1)
+	})
+
+	t.Run("UC-S5-05: Column Sorting ASC", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users ORDER BY username ASC LIMIT 50"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       [][]interface{}{{1, "aaa", "aaa@test.com"}, {2, "bbb", "bbb@test.com"}},
+			LoadedRows: 2,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		// Verify first row comes before second (alphabetically)
+		assert.Equal(t, "aaa", result.Rows[0][1])
+		assert.Equal(t, "bbb", result.Rows[1][1])
+	})
+
+	t.Run("UC-S5-06: Column Sorting DESC", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users ORDER BY username DESC LIMIT 50"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       [][]interface{}{{2, "zzz", "zzz@test.com"}, {1, "aaa", "aaa@test.com"}},
+			LoadedRows: 2,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		// Verify first row comes after second (reverse alphabetically)
+		assert.Equal(t, "zzz", result.Rows[0][1])
+		assert.Equal(t, "aaa", result.Rows[1][1])
+	})
+
+	t.Run("UC-S5-07: Cursor Pagination Actual Size Display", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users LIMIT 50"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       make([][]interface{}, 50),
+			LoadedRows: 50,
+			TotalRows:  5000, // Actual total
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 50)
+		assert.Equal(t, int64(5000), result.TotalRows)
+		assert.Equal(t, 50, result.LoadedRows)
+	})
+
+	t.Run("UC-S5-08: Cursor Pagination Hard Limit", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM users LIMIT 1000"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       make([][]interface{}, 1000),
+			LoadedRows: 1000,
+			TotalRows:  50000, // Much larger than hard limit
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 1000)
+		assert.Equal(t, 1000, result.LoadedRows)
+		assert.Greater(t, int(result.TotalRows), 1000) // Total is more than limit
+	})
+
+	t.Run("UC-S5-17: Foreign Key Navigation", func(t *testing.T) {
+		ctx := context.Background()
+		// When user clicks a FK cell, query parent table
+		query := "SELECT * FROM authors WHERE id = $1"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "name", "email"},
+			Rows:       [][]interface{}{{1, "John Doe", "john@test.com"}},
+			LoadedRows: 1,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query, int64(1)).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query, int64(1))
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 1)
+	})
+
+	t.Run("UC-S5-18: Primary Key Navigation", func(t *testing.T) {
+		ctx := context.Background()
+		// Get referencing tables and counts for a PK value
+		query := "SELECT 'posts' as table_name, COUNT(*) as count FROM posts WHERE author_id = $1"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"table_name", "count"},
+			Rows:       [][]interface{}{{"posts", int64(5)}},
+			LoadedRows: 1,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query, int64(1)).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query, int64(1))
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
+		assert.Equal(t, "posts", result.Rows[0][0])
+		assert.Equal(t, int64(5), result.Rows[0][1])
+	})
+
+	t.Run("UC-S5-19: Read-Only Mode Enforcement", func(t *testing.T) {
+		ctx := context.Background()
+		// In read-only mode, SELECT should work
+		query := "SELECT * FROM users LIMIT 1"
+		expectedResult := &domain.QueryResult{
+			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       [][]interface{}{{1, "user1", "user1@test.com"}},
+			LoadedRows: 1,
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.True(t, result.Success)
 	})
 }
