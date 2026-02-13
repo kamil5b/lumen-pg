@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+
 	"github.com/kamil5b/lumen-pg/internal/domain"
 )
 
@@ -11,4 +12,5 @@ type TransactionUseCase interface {
 	BufferEdit(ctx context.Context, txnID string, op domain.TransactionOperation) error
 	CommitTransaction(ctx context.Context, txnID string) error
 	RollbackTransaction(ctx context.Context, txnID string) error
+	GetTransaction(ctx context.Context, txnID string) (*domain.Transaction, error)
 }

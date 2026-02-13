@@ -9,9 +9,9 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
+	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
 	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
-	"github.com/kamil5b/lumen-pg/internal/implementations/mocks"
 )
 
 // MetadataUseCaseConstructor creates a metadata use case with its dependencies
@@ -68,6 +68,28 @@ func MetadataUseCaseRunner(t *testing.T, constructor MetadataUseCaseConstructor)
 		assert.Equal(t, "testdb", result.Databases[0].Name)
 		assert.Len(t, result.Roles, 1)
 		assert.Equal(t, "admin", result.Roles[0].RoleName)
+	})
+
+	t.Run("UC-S1-06: In-Memory Metadata Storage - Per Role", func(t *testing.T) {
+		ctx := context.Background()
+		roleName := "editor"
+		expectedRole := &domain.RoleMetadata{
+			RoleName:            roleName,
+			AccessibleDatabases: []string{"testdb"},
+			AccessibleSchemas:   map[string][]string{"testdb": {"public"}},
+			AccessibleTables:    map[string][]string{"testdb.public": {"users", "posts"}},
+		}
+
+		mockRepo.EXPECT().LoadRolePermissions(ctx, roleName).Return(expectedRole, nil)
+
+		result, err := useCase.LoadRoleAccessibleResources(ctx, roleName)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, roleName, result.RoleName)
+		assert.Len(t, result.AccessibleDatabases, 1)
+		assert.Len(t, result.AccessibleSchemas["testdb"], 1)
+		assert.Len(t, result.AccessibleTables["testdb.public"], 2)
 	})
 
 	t.Run("UC-S1-07: RBAC Initialization with User Accessibility", func(t *testing.T) {
