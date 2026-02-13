@@ -4,7 +4,7 @@ import "net/http"
 
 // TransactionHandler handles transaction-related HTTP requests
 type TransactionHandler interface {
-	HTTPHandler
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 	HandleStartTransaction(w http.ResponseWriter, r *http.Request)
 	HandleEditCell(w http.ResponseWriter, r *http.Request)
 	HandleDeleteRow(w http.ResponseWriter, r *http.Request)

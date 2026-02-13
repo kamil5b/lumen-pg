@@ -22,7 +22,7 @@ type LoggerRepository interface {
 	LogSecurityEvent(ctx context.Context, eventType string, username string, details map[string]interface{}) error
 
 	// LogQueryExecution logs a query execution
-	LogQueryExecution(ctx context.Context, username string, query string, executionTimeMs int64, success bool, error error) error
+	LogQueryExecution(ctx context.Context, username string, query string, executionTimeMs int64, success bool, err error) error
 
 	// LogTransactionEvent logs a transaction event
 	LogTransactionEvent(ctx context.Context, username string, eventType string, details map[string]interface{}) error

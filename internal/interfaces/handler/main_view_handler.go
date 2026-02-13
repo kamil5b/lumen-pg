@@ -4,7 +4,7 @@ import "net/http"
 
 // MainViewHandler handles main data view HTTP requests
 type MainViewHandler interface {
-	HTTPHandler
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 	HandleMainViewPage(w http.ResponseWriter, r *http.Request)
 	HandleTableSelect(w http.ResponseWriter, r *http.Request)
 	HandleLoadTableData(w http.ResponseWriter, r *http.Request)

@@ -9,7 +9,7 @@ type HTTPHandler interface {
 
 // HealthHandler handles health check HTTP requests
 type HealthHandler interface {
-	HTTPHandler
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 	HandleHealthCheck(w http.ResponseWriter, r *http.Request)
 	HandleIsInitialized(w http.ResponseWriter, r *http.Request)
 }

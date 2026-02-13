@@ -4,7 +4,7 @@ import "net/http"
 
 // DataExplorerHandler handles data explorer sidebar HTTP requests
 type DataExplorerHandler interface {
-	HTTPHandler
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 	HandleLoadDataExplorer(w http.ResponseWriter, r *http.Request)
 	HandleSelectDatabase(w http.ResponseWriter, r *http.Request)
 	HandleSelectSchema(w http.ResponseWriter, r *http.Request)
