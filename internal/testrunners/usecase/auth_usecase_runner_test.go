@@ -1,4 +1,4 @@
-package testrunners
+package usecase_test
 
 import (
 	"context"

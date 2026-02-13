@@ -1,4 +1,4 @@
-package testrunners
+package repository_test
 
 import (
 	"context"

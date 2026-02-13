@@ -1,4 +1,4 @@
-package testrunners
+package e2e
 
 import (
 	"net/http"
