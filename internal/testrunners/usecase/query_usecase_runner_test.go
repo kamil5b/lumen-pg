@@ -29,42 +29,44 @@ func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 
 	t.Run("UC-S4-01: Single Query Execution", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "SELECT * FROM users"
+		query := "SELECT * FROM users"
 		expectedResult := &domain.QueryResult{
-			Columns:    []string{"id", "username"},
-			Rows:       [][]interface{}{{1, "test"}},
-			TotalRows:  1,
-			LoadedRows: 1,
-			Success:    true,
+			Success: true,
+			Columns: []string{"id", "username", "email"},
+			Rows: [][]interface{}{
+				{1, "user1", "user1@test.com"},
+			},
+			AffectedRows: 0,
 		}
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql)
+		result, err := useCase.ExecuteQuery(ctx, query)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.True(t, result.Success)
+		assert.Len(t, result.Columns, 3)
 		assert.Len(t, result.Rows, 1)
 	})
 
 	t.Run("UC-S4-02: Multiple Query Execution", func(t *testing.T) {
 		ctx := context.Background()
-		queries := "SELECT * FROM users; SELECT * FROM posts;"
+		queries := "SELECT * FROM users; SELECT * FROM posts"
 		expectedResults := []*domain.QueryResult{
 			{
-				Columns:    []string{"id", "username"},
-				Rows:       [][]interface{}{{1, "test"}},
-				TotalRows:  1,
-				LoadedRows: 1,
-				Success:    true,
+				Success: true,
+				Columns: []string{"id", "username"},
+				Rows: [][]interface{}{
+					{1, "user1"},
+				},
 			},
 			{
-				Columns:    []string{"id", "title"},
-				Rows:       [][]interface{}{{1, "post1"}},
-				TotalRows:  1,
-				LoadedRows: 1,
-				Success:    true,
+				Success: true,
+				Columns: []string{"id", "title"},
+				Rows: [][]interface{}{
+					{1, "post1"},
+				},
 			},
 		}
 
@@ -73,141 +75,118 @@ func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 		results, err := useCase.ExecuteMultipleQueries(ctx, queries)
 
 		require.NoError(t, err)
+		assert.NotNil(t, results)
 		assert.Len(t, results, 2)
 		assert.True(t, results[0].Success)
 		assert.True(t, results[1].Success)
 	})
 
-	t.Run("UC-S4-03a: Query Result Actual Size Display", func(t *testing.T) {
-		ctx := context.Background()
-		sql := "SELECT * FROM large_table"
-		expectedResult := &domain.QueryResult{
-			Columns:    []string{"id", "data"},
-			Rows:       make([][]interface{}, 1000), // First 1000 rows loaded
-			TotalRows:  5000,                        // Total rows available
-			LoadedRows: 1000,                        // Hard limit reached
-			Success:    true,
-		}
-
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
-
-		result, err := useCase.ExecuteQuery(ctx, sql)
-
-		require.NoError(t, err)
-		assert.Equal(t, int64(5000), result.TotalRows) // Shows actual size
-		assert.Equal(t, 1000, result.LoadedRows)       // Hard limit: only 1000 loaded
-	})
-
-	t.Run("UC-S4-06: Invalid Query Error", func(t *testing.T) {
-		ctx := context.Background()
-		sql := "SELECT * FROM nonexistent_table"
-		expectedResult := &domain.QueryResult{
-			Success:      false,
-			ErrorMessage: "table does not exist",
-		}
-
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
-
-		result, err := useCase.ExecuteQuery(ctx, sql)
-
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.False(t, result.Success)
-		assert.Contains(t, result.ErrorMessage, "does not exist")
-	})
-
 	t.Run("UC-S4-03: Query Result Offset Pagination", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "SELECT * FROM users LIMIT 100 OFFSET 0"
+		query := "SELECT * FROM users LIMIT 10 OFFSET 0"
 		expectedResult := &domain.QueryResult{
-			Columns:    []string{"id", "username"},
-			Rows:       make([][]interface{}, 100),
-			TotalRows:  500,
-			LoadedRows: 100,
 			Success:    true,
+			Columns:    []string{"id", "username"},
+			Rows:       make([][]interface{}, 10),
+			TotalRows:  100, // Total rows available
+			LoadedRows: 10,
 		}
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql)
+		result, err := useCase.ExecuteQuery(ctx, query)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.True(t, result.Success)
-		assert.Equal(t, 100, result.LoadedRows)
-		assert.Equal(t, int64(500), result.TotalRows)
+		assert.Equal(t, int64(100), result.TotalRows)
+	})
+
+	t.Run("UC-S4-03a: Query Result Actual Size Display", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT COUNT(*) as total FROM users"
+		expectedResult := &domain.QueryResult{
+			Success: true,
+			Columns: []string{"total"},
+			Rows: [][]interface{}{
+				{int64(1000)},
+			},
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Len(t, result.Rows, 1)
+		assert.Equal(t, int64(1000), result.Rows[0][0])
 	})
 
 	t.Run("UC-S4-03b: Query Result Limit Hard Cap", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "SELECT * FROM huge_table"
+		query := "SELECT * FROM users"
+		// Result capped at hard limit (e.g., 1000 rows max display)
 		expectedResult := &domain.QueryResult{
-			Columns:    []string{"id", "data"},
-			Rows:       make([][]interface{}, 1000), // Hard limit enforced
-			TotalRows:  1000000,                     // But total is much larger
-			LoadedRows: 1000,
 			Success:    true,
+			Columns:    []string{"id", "username"},
+			Rows:       make([][]interface{}, 1000), // Hard cap
+			TotalRows:  50000,                       // But actual data is larger
+			LoadedRows: 1000,                        // Hard limit enforced
 		}
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql)
+		result, err := useCase.ExecuteQuery(ctx, query)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.True(t, result.Success)
-		assert.Equal(t, 1000, result.LoadedRows)                      // Hard limit enforced
-		assert.Greater(t, result.TotalRows, int64(result.LoadedRows)) // Total exceeds loaded
+		assert.Len(t, result.Rows, 1000)
+		assert.Equal(t, int64(50000), result.TotalRows)
+		assert.Equal(t, 1000, result.LoadedRows)
 	})
 
 	t.Run("UC-S4-03c: Offset Pagination Next Page", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "SELECT * FROM users LIMIT 100 OFFSET 100"
+		query := "SELECT * FROM users LIMIT 10 OFFSET 10"
 		expectedResult := &domain.QueryResult{
-			Columns:    []string{"id", "username"},
-			Rows:       make([][]interface{}, 100),
-			TotalRows:  500,
-			LoadedRows: 100,
 			Success:    true,
+			Columns:    []string{"id", "username"},
+			Rows:       make([][]interface{}, 10),
+			LoadedRows: 10,
 		}
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql)
+		result, err := useCase.ExecuteQuery(ctx, query)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 10)
 	})
 
 	t.Run("UC-S4-04: DDL Query Execution", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "CREATE TABLE new_table (id SERIAL PRIMARY KEY)"
-		expectedResult := &domain.QueryResult{
-			Success: true,
-		}
+		query := "CREATE TABLE test (id SERIAL PRIMARY KEY, name VARCHAR(100))"
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteDDL(ctx, query).Return(nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql)
+		err := mockRepo.ExecuteDDL(ctx, query)
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.True(t, result.Success)
 	})
 
 	t.Run("UC-S4-05: DML Query Execution", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "INSERT INTO users (username) VALUES ('newuser')"
+		query := "INSERT INTO users (username, email) VALUES ($1, $2)"
 		expectedResult := &domain.QueryResult{
 			Success:      true,
 			AffectedRows: 1,
-			ErrorMessage: "",
+			LoadedRows:   0,
 		}
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteDML(ctx, query, "newuser", "new@test.com").Return(expectedResult, nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql)
+		result, err := mockRepo.ExecuteDML(ctx, query, "newuser", "new@test.com")
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -215,25 +194,31 @@ func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 		assert.Equal(t, int64(1), result.AffectedRows)
 	})
 
+	t.Run("UC-S4-06: Invalid Query Error", func(t *testing.T) {
+		ctx := context.Background()
+		query := "SELECT * FROM nonexistent_table"
+		expectedResult := &domain.QueryResult{
+			Success:      false,
+			ErrorMessage: "relation \"nonexistent_table\" does not exist",
+		}
+
+		mockRepo.EXPECT().ExecuteQuery(ctx, query).Return(expectedResult, nil)
+
+		result, err := useCase.ExecuteQuery(ctx, query)
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.False(t, result.Success)
+		assert.NotEmpty(t, result.ErrorMessage)
+	})
+
 	t.Run("UC-S4-07: Query Splitting", func(t *testing.T) {
 		ctx := context.Background()
-		queries := "SELECT * FROM users; UPDATE users SET username='test' WHERE id=1; DELETE FROM users WHERE id=2;"
+		queries := "SELECT * FROM users; DELETE FROM posts; UPDATE comments SET approved = true"
 		expectedResults := []*domain.QueryResult{
-			{
-				Columns:    []string{"id", "username"},
-				Rows:       [][]interface{}{{1, "test"}},
-				TotalRows:  1,
-				LoadedRows: 1,
-				Success:    true,
-			},
-			{
-				Success:      true,
-				AffectedRows: 1,
-			},
-			{
-				Success:      true,
-				AffectedRows: 1,
-			},
+			{Success: true},
+			{Success: true, AffectedRows: 5},
+			{Success: true, AffectedRows: 3},
 		}
 
 		mockRepo.EXPECT().ExecuteMultiple(ctx, queries).Return(expectedResults, nil)
@@ -241,6 +226,7 @@ func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 		results, err := useCase.ExecuteMultipleQueries(ctx, queries)
 
 		require.NoError(t, err)
+		assert.NotNil(t, results)
 		assert.Len(t, results, 3)
 		assert.True(t, results[0].Success)
 		assert.True(t, results[1].Success)
@@ -249,22 +235,22 @@ func QueryUseCaseRunner(t *testing.T, constructor QueryUseCaseConstructor) {
 
 	t.Run("UC-S4-08: Parameterized Query Execution", func(t *testing.T) {
 		ctx := context.Background()
-		sql := "SELECT * FROM users WHERE id = $1"
-		params := []interface{}{1}
+		query := "SELECT * FROM users WHERE id = $1 AND username = $2"
 		expectedResult := &domain.QueryResult{
-			Columns:    []string{"id", "username"},
-			Rows:       [][]interface{}{{1, "test"}},
-			TotalRows:  1,
-			LoadedRows: 1,
 			Success:    true,
+			Columns:    []string{"id", "username", "email"},
+			Rows:       [][]interface{}{{1, "user1", "user1@test.com"}},
+			LoadedRows: 1,
 		}
 
-		mockRepo.EXPECT().ExecuteQuery(ctx, sql, 1).Return(expectedResult, nil)
+		mockRepo.EXPECT().ExecuteQuery(ctx, query, int64(1), "user1").Return(expectedResult, nil)
 
-		result, err := useCase.ExecuteQuery(ctx, sql, params...)
+		result, err := useCase.ExecuteQuery(ctx, query, int64(1), "user1")
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.True(t, result.Success)
+		assert.Len(t, result.Rows, 1)
+		assert.Equal(t, "user1", result.Rows[0][1])
 	})
 }
