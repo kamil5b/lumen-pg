@@ -235,15 +235,15 @@ func TransactionUsecaseRunner(t *testing.T, constructor TransactionUsecaseConstr
 
 		mockRBAC.EXPECT().
 			HasUpdatePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		mockRBAC.EXPECT().
 			HasInsertPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		mockRBAC.EXPECT().
 			HasDeletePermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		err := uc.CommitTransaction(ctx, "testuser")
 

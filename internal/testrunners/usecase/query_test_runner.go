@@ -49,7 +49,7 @@ func QueryUsecaseRunner(t *testing.T, constructor QueryUsecaseConstructor) {
 
 		mockRBAC.EXPECT().
 			HasSelectPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		result, err := uc.ExecuteQuery(ctx, "testuser", "SELECT * FROM users LIMIT 10", 0, 10)
 
@@ -79,7 +79,7 @@ func QueryUsecaseRunner(t *testing.T, constructor QueryUsecaseConstructor) {
 
 		mockRBAC.EXPECT().
 			HasSelectPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		results, err := uc.ExecuteMultipleQueries(ctx, "testuser", "SELECT * FROM users; SELECT * FROM posts;")
 
@@ -108,7 +108,7 @@ func QueryUsecaseRunner(t *testing.T, constructor QueryUsecaseConstructor) {
 
 		mockRBAC.EXPECT().
 			HasSelectPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		result, err := uc.ExecuteQueryWithPagination(ctx, "testuser", domain.QueryParams{
 			Query:  "SELECT * FROM users",
@@ -135,7 +135,7 @@ func QueryUsecaseRunner(t *testing.T, constructor QueryUsecaseConstructor) {
 
 		mockRBAC.EXPECT().
 			HasSelectPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		result, err := uc.ExecuteQueryWithPagination(ctx, "testuser", domain.QueryParams{
 			Query: "SELECT * FROM large_table",
@@ -275,7 +275,7 @@ func QueryUsecaseRunner(t *testing.T, constructor QueryUsecaseConstructor) {
 
 		mockRBAC.EXPECT().
 			HasSelectPermission(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		result, err := uc.ExecuteQuery(ctx, "testuser", "SELECT * FROM users WHERE id = $1", 0, 10)
 

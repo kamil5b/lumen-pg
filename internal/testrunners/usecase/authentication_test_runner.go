@@ -370,28 +370,28 @@ func AuthenticationUsecaseRunner(t *testing.T, constructor AuthenticationUsecase
 			Return(&domain.Session{
 				ID:       "session_user1",
 				Username: "user1",
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockSession.EXPECT().
 			ValidateSession(gomock.Any(), "session_user2").
 			Return(&domain.Session{
 				ID:       "session_user2",
 				Username: "user2",
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockMetadata.EXPECT().
 			GetRoleMetadata(gomock.Any(), "user1").
 			Return(&domain.RoleMetadata{
 				Name:                "user1",
 				AccessibleDatabases: []string{"db1"},
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockMetadata.EXPECT().
 			GetRoleMetadata(gomock.Any(), "user2").
 			Return(&domain.RoleMetadata{
 				Name:                "user2",
 				AccessibleDatabases: []string{"db2"},
-			}, nil).AnyTimes()
+			}, nil)
 
 		user1, err1 := uc.GetSessionUser(ctx, "session_user1")
 		user2, err2 := uc.GetSessionUser(ctx, "session_user2")

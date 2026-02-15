@@ -228,7 +228,7 @@ func DataViewUsecaseRunner(t *testing.T, constructor DataViewUsecaseConstructor)
 
 		mockRBAC.EXPECT().
 			CanAccessTable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		fks, err := uc.GetForeignKeyInfo(ctx, "testuser", "testdb", "public", "posts")
 

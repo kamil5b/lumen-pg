@@ -61,7 +61,7 @@ func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructo
 			Return(&domain.Session{
 				ID:       "session_admin",
 				Username: "admin_user",
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockAuth.EXPECT().
 			GetUserAccessibleResources(gomock.Any(), "admin_user").
@@ -74,7 +74,7 @@ func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructo
 					{Database: "testdb1", Schema: "public", Name: "posts", HasSelect: true, HasInsert: true, HasUpdate: true, HasDelete: true},
 					{Database: "testdb1", Schema: "public", Name: "comments", HasSelect: true, HasInsert: true, HasUpdate: true, HasDelete: true},
 				},
-			}, nil).AnyTimes()
+			}, nil)
 
 		// User 2 - Limited user with read-only access
 		mockAuth.EXPECT().
@@ -82,7 +82,7 @@ func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructo
 			Return(&domain.Session{
 				ID:       "session_readonly",
 				Username: "readonly_user",
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockAuth.EXPECT().
 			GetUserAccessibleResources(gomock.Any(), "readonly_user").
@@ -93,7 +93,7 @@ func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructo
 				AccessibleTables: []domain.AccessibleTable{
 					{Database: "testdb1", Schema: "public", Name: "users", HasSelect: true, HasInsert: false, HasUpdate: false, HasDelete: false},
 				},
-			}, nil).AnyTimes()
+			}, nil)
 
 		// Request from admin user - load data explorer
 		reqAdmin := httptest.NewRequest(http.MethodGet, "/api/data-explorer", nil)
@@ -146,11 +146,11 @@ func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructo
 			Return(&domain.Session{
 				ID:       "session_user1",
 				Username: "user1",
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockRBAC.EXPECT().
 			CheckUpdatePermission(gomock.Any(), "user1", "testdb", "public", "users").
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		mockTxn.EXPECT().
 			CheckActiveTransaction(gomock.Any(), "user1").
@@ -179,11 +179,11 @@ func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructo
 			Return(&domain.Session{
 				ID:       "session_user2",
 				Username: "user2",
-			}, nil).AnyTimes()
+			}, nil)
 
 		mockRBAC.EXPECT().
 			CheckUpdatePermission(gomock.Any(), "user2", "testdb", "public", "users").
-			Return(true, nil).AnyTimes()
+			Return(true, nil)
 
 		mockTxn.EXPECT().
 			CheckActiveTransaction(gomock.Any(), "user2").
