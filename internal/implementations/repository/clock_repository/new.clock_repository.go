@@ -5,7 +5,6 @@ import (
 )
 
 type ClockRepositoryImplementation struct {
-	// clock implementation details will be added here
 }
 
 func NewClockRepository() repository.ClockRepository {

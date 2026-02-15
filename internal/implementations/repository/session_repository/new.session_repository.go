@@ -1,6 +1,7 @@
 package session_repository
 
 import (
+	"database/sql"
 	"sync"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
@@ -9,11 +10,13 @@ import (
 
 type SessionRepositoryImplementation struct {
 	mu       sync.RWMutex
+	db       *sql.DB
 	sessions map[string]*domain.Session
 }
 
-func NewSessionRepository() repository.SessionRepository {
+func NewSessionRepository(db *sql.DB) repository.SessionRepository {
 	return &SessionRepositoryImplementation{
+		db:       db,
 		sessions: make(map[string]*domain.Session),
 	}
 }
