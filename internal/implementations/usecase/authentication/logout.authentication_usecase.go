@@ -2,9 +2,13 @@ package authentication
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *AuthenticationUseCaseImplementation) Logout(ctx context.Context, sessionID string) error {
-	return errors.New("not implemented")
+	err := u.sessionRepo.DeleteSession(ctx, sessionID)
+	if err != nil {
+		return fmt.Errorf("failed to delete session: %w", err)
+	}
+	return nil
 }

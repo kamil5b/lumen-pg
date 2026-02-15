@@ -184,3 +184,11 @@ type ValidationError struct {
 	Field   string
 	Message string
 }
+
+// Error implements the error interface for ValidationError
+func (ve ValidationError) Error() string {
+	if ve.Field != "" {
+		return ve.Field + ": " + ve.Message
+	}
+	return ve.Message
+}

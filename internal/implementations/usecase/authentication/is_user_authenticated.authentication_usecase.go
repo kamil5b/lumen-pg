@@ -2,9 +2,18 @@ package authentication
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *AuthenticationUseCaseImplementation) IsUserAuthenticated(ctx context.Context, sessionID string) (bool, error) {
-	return false, errors.New("not implemented")
+	session, err := u.sessionRepo.ValidateSession(ctx, sessionID)
+	if err != nil {
+		return false, fmt.Errorf("failed to validate session: %w", err)
+	}
+
+	if session == nil {
+		return false, fmt.Errorf("session not found")
+	}
+
+	return true, nil
 }
