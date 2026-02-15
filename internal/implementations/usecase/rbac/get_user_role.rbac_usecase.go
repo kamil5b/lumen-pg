@@ -2,9 +2,15 @@ package rbac
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *RBACUseCaseImplementation) GetUserRole(ctx context.Context, username string) (string, error) {
-	return "", errors.New("not implemented")
+	// Get the role of the user
+	role, err := u.rbacRepo.GetUserRole(ctx, username)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user role: %w", err)
+	}
+
+	return role, nil
 }

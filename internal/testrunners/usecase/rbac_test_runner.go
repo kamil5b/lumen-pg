@@ -205,7 +205,7 @@ func RBACUsecaseRunner(t *testing.T, constructor RBACUsecaseConstructor) {
 
 	// IT-S1-04: Cache Accessible Resources Per Role
 	t.Run("GetUserAccessibleTables returns user's tables", func(t *testing.T) {
-		mockMetadata.EXPECT().
+		mockRBAC.EXPECT().
 			GetAccessibleTables(gomock.Any(), "testuser", "testdb", "public").
 			Return([]domain.AccessibleTable{
 				{

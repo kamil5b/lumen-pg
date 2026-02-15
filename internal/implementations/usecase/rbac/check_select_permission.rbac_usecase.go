@@ -2,9 +2,19 @@ package rbac
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *RBACUseCaseImplementation) CheckSelectPermission(ctx context.Context, username, database, schema, table string) (bool, error) {
-	return false, errors.New("not implemented")
+	// Get table permissions for the user
+	perms, err := u.metadataRepo.GetTablePermissions(ctx, username, database, schema, table)
+	if err != nil {
+		return false, fmt.Errorf("failed to get table permissions: %w", err)
+	}
+
+	if perms == nil {
+		return false, fmt.Errorf("no permissions found for table %s", table)
+	}
+
+	return perms.HasSelect, nil
 }
