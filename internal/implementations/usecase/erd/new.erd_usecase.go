@@ -1,6 +1,9 @@
 package erd
 
-import "github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+import (
+	"github.com/kamil5b/lumen-pg/internal/interfaces/repository"
+	"github.com/kamil5b/lumen-pg/internal/interfaces/usecase"
+)
 
 type ERDUseCaseImplementation struct {
 	metadataRepo repository.MetadataRepository
@@ -10,7 +13,7 @@ type ERDUseCaseImplementation struct {
 func NewERDUseCaseImplementation(
 	metadataRepo repository.MetadataRepository,
 	rbacRepo repository.RBACRepository,
-) *ERDUseCaseImplementation {
+) usecase.ERDUseCase {
 	return &ERDUseCaseImplementation{
 		metadataRepo: metadataRepo,
 		rbacRepo:     rbacRepo,
