@@ -6,19 +6,19 @@ import (
 )
 
 type SetupUseCaseImplementation struct {
+	databaseRepo repository.DatabaseRepository
 	metadataRepo repository.MetadataRepository
 	rbacRepo     repository.RBACRepository
-	dataRepo     repository.DataRepository
 }
 
 func NewSetupUseCaseImplementation(
+	databaseRepo repository.DatabaseRepository,
 	metadataRepo repository.MetadataRepository,
 	rbacRepo repository.RBACRepository,
-	dataRepo repository.DataRepository,
 ) usecase.SetupUseCase {
 	return &SetupUseCaseImplementation{
+		databaseRepo: databaseRepo,
 		metadataRepo: metadataRepo,
 		rbacRepo:     rbacRepo,
-		dataRepo:     dataRepo,
 	}
 }

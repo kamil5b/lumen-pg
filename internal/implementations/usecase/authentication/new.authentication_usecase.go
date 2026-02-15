@@ -6,22 +6,25 @@ import (
 )
 
 type AuthenticationUseCaseImplementation struct {
-	authRepo     repository.AuthenticationRepository
-	sessionRepo  repository.SessionRepository
-	rbacRepo     repository.RBACRepository
-	metadataRepo repository.MetadataRepository
+	databaseRepo   repository.DatabaseRepository
+	metadataRepo   repository.MetadataRepository
+	sessionRepo    repository.SessionRepository
+	rbacRepo       repository.RBACRepository
+	encryptionRepo repository.EncryptionRepository
 }
 
 func NewAuthenticationUseCaseImplementation(
-	authRepo repository.AuthenticationRepository,
+	databaseRepo repository.DatabaseRepository,
+	metadataRepo repository.MetadataRepository,
 	sessionRepo repository.SessionRepository,
 	rbacRepo repository.RBACRepository,
-	metadataRepo repository.MetadataRepository,
+	encryptionRepo repository.EncryptionRepository,
 ) usecase.AuthenticationUseCase {
 	return &AuthenticationUseCaseImplementation{
-		authRepo:     authRepo,
-		sessionRepo:  sessionRepo,
-		rbacRepo:     rbacRepo,
-		metadataRepo: metadataRepo,
+		databaseRepo:   databaseRepo,
+		metadataRepo:   metadataRepo,
+		sessionRepo:    sessionRepo,
+		rbacRepo:       rbacRepo,
+		encryptionRepo: encryptionRepo,
 	}
 }

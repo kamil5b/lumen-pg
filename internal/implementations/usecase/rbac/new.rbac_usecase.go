@@ -11,8 +11,8 @@ type RBACUseCaseImplementation struct {
 }
 
 func NewRBACUseCaseImplementation(
-	rbacRepo repository.RBACRepository,
 	metadataRepo repository.MetadataRepository,
+	rbacRepo repository.RBACRepository,
 ) usecase.RBACUseCase {
 	return &RBACUseCaseImplementation{
 		rbacRepo:     rbacRepo,

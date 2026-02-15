@@ -6,13 +6,19 @@ import (
 )
 
 type SecurityUseCaseImplementation struct {
-	securityRepo repository.SecurityRepository
+	encryptionRepo repository.EncryptionRepository
+	sessionRepo    repository.SessionRepository
+	clockRepo      repository.ClockRepository
 }
 
 func NewSecurityUseCaseImplementation(
-	securityRepo repository.SecurityRepository,
+	encryptionRepo repository.EncryptionRepository,
+	sessionRepo repository.SessionRepository,
+	clockRepo repository.ClockRepository,
 ) usecase.SecurityUseCase {
 	return &SecurityUseCaseImplementation{
-		securityRepo: securityRepo,
+		encryptionRepo: encryptionRepo,
+		sessionRepo:    sessionRepo,
+		clockRepo:      clockRepo,
 	}
 }

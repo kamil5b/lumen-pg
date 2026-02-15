@@ -7,18 +7,18 @@ import (
 
 type TransactionUseCaseImplementation struct {
 	transactionRepo repository.TransactionRepository
-	dataRepo        repository.DataRepository
-	rbacUseCase     usecase.RBACUseCase
+	databaseRepo    repository.DatabaseRepository
+	rbacRepo        repository.RBACRepository
 }
 
 func NewTransactionUseCaseImplementation(
 	transactionRepo repository.TransactionRepository,
-	dataRepo repository.DataRepository,
-	rbacUseCase usecase.RBACUseCase,
+	databaseRepo repository.DatabaseRepository,
+	rbacRepo repository.RBACRepository,
 ) usecase.TransactionUseCase {
 	return &TransactionUseCaseImplementation{
 		transactionRepo: transactionRepo,
-		dataRepo:        dataRepo,
-		rbacUseCase:     rbacUseCase,
+		databaseRepo:    databaseRepo,
+		rbacRepo:        rbacRepo,
 	}
 }

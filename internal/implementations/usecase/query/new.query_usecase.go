@@ -6,19 +6,16 @@ import (
 )
 
 type QueryUseCaseImplementation struct {
-	queryRepo       repository.QueryRepository
-	rbacUseCase     usecase.RBACUseCase
-	securityUseCase usecase.SecurityUseCase
+	databaseRepo repository.DatabaseRepository
+	rbacRepo     repository.RBACRepository
 }
 
 func NewQueryUseCaseImplementation(
-	queryRepo repository.QueryRepository,
-	rbacUseCase usecase.RBACUseCase,
-	securityUseCase usecase.SecurityUseCase,
+	databaseRepo repository.DatabaseRepository,
+	rbacRepo repository.RBACRepository,
 ) usecase.QueryUseCase {
 	return &QueryUseCaseImplementation{
-		queryRepo:       queryRepo,
-		rbacUseCase:     rbacUseCase,
-		securityUseCase: securityUseCase,
+		databaseRepo: databaseRepo,
+		rbacRepo:     rbacRepo,
 	}
 }
