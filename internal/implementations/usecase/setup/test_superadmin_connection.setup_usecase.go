@@ -2,9 +2,15 @@ package setup
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *SetupUseCaseImplementation) TestSuperadminConnection(ctx context.Context, connString string) (bool, error) {
-	return false, errors.New("not implemented")
+	// Test the connection using the database repository
+	err := u.databaseRepo.TestConnection(ctx, connString)
+	if err != nil {
+		return false, fmt.Errorf("failed to test superadmin connection: %w", err)
+	}
+
+	return true, nil
 }

@@ -338,7 +338,7 @@ func SecurityUsecaseRunner(t *testing.T, constructor SecurityUsecaseConstructor)
 
 		mockEncryption.EXPECT().
 			GenerateSignature(gomock.Any(), gomock.Any()).
-			Return("cookie_signature", nil)
+			Return("cookie_signature", nil).Times(2)
 
 		futureTime := time.Now().Add(1 * time.Hour)
 		mockSession.EXPECT().

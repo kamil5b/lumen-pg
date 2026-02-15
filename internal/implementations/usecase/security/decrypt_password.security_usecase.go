@@ -2,9 +2,15 @@ package security
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *SecurityUseCaseImplementation) DecryptPassword(ctx context.Context, encryptedPassword string) (string, error) {
-	return "", errors.New("not implemented")
+	// Decrypt the password using the encryption repository
+	decrypted, err := u.encryptionRepo.Decrypt(ctx, encryptedPassword)
+	if err != nil {
+		return "", fmt.Errorf("failed to decrypt password: %w", err)
+	}
+
+	return decrypted, nil
 }

@@ -2,9 +2,31 @@ package setup
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 func (u *SetupUseCaseImplementation) InitializeMetadata(ctx context.Context, connString string) error {
-	return errors.New("not implemented")
+	// Test the connection first
+	err := u.databaseRepo.TestConnection(ctx, connString)
+	if err != nil {
+		return fmt.Errorf("failed to test connection: %w", err)
+	}
+
+	// Get database metadata
+	metadata, err := u.databaseRepo.GetDatabaseMetadata(ctx, connString)
+	if err != nil {
+		return fmt.Errorf("failed to get database metadata: %w", err)
+	}
+
+	if metadata == nil {
+		return fmt.Errorf("no metadata returned from database")
+	}
+
+	// Store the metadata in the metadata repository
+	err = u.metadataRepo.StoreMetadata(ctx, metadata)
+	if err != nil {
+		return fmt.Errorf("failed to store metadata: %w", err)
+	}
+
+	return nil
 }
