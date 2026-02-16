@@ -21,9 +21,13 @@ type ERDViewerHandlerConstructor func(
 	authUC usecase.AuthenticationUseCase,
 ) handler.ERDViewerHandler
 
-// ERDViewerHandlerRunner runs all ERD viewer E2E handler tests
+// ERDViewerHandlerRunner runs all ERD viewer handler tests
 // Maps to TEST_PLAN.md:
-// - Story 3: ERD Viewer [E2E-S3-01~04]
+// - Story 3: ERD Viewer [UC-S3-01~04, E2E-S3-01~04]
+//
+// NOTE: Authentication and session validation are MIDDLEWARE concerns
+// NOTE: Handlers assume middleware has already validated session and populated user context
+// NOTE: Handlers focus on business logic: ERD data generation, schema representation, relationship mapping
 func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructor) {
 	t.Helper()
 

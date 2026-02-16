@@ -24,9 +24,13 @@ type TransactionHandlerConstructor func(
 	rbacUC usecase.RBACUseCase,
 ) handler.TransactionHandler
 
-// TransactionHandlerRunner runs all transaction E2E handler tests
+// TransactionHandlerRunner runs all transaction handler tests
 // Maps to TEST_PLAN.md:
-// - Story 5: Main View & Data Interaction [E2E-S5-06~13]
+// - Story 5: Main View & Data Interaction [UC-S5-09~18, E2E-S5-06~13]
+//
+// NOTE: Authentication and session validation are MIDDLEWARE concerns
+// NOTE: Handlers assume middleware has already validated session and populated user context
+// NOTE: Handlers focus on business logic: transaction management, buffering edits, commit/rollback
 func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstructor) {
 	t.Helper()
 

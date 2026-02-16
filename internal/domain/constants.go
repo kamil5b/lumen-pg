@@ -152,3 +152,11 @@ const (
 	PermissionConnect = "CONNECT"
 	PermissionUsage   = "USAGE"
 )
+
+const (
+	ContextKeyTransaction = "transaction"
+	ContextKeyPermissions = "permissions"
+	ContextKeyMetadata    = "metadata"
+	ContextKeyUser        = "user"
+	ContextKeySession     = "session"
+)

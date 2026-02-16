@@ -23,9 +23,13 @@ type QueryEditorHandlerConstructor func(
 	authUC usecase.AuthenticationUseCase,
 ) handler.QueryEditorHandler
 
-// QueryEditorHandlerRunner runs all query editor E2E handler tests
+// QueryEditorHandlerRunner runs all query editor handler tests
 // Maps to TEST_PLAN.md:
-// - Story 4: Manual Query Editor [E2E-S4-01~06]
+// - Story 4: Manual Query Editor [UC-S4-01~08, E2E-S4-01~06]
+//
+// NOTE: Authentication and session validation are MIDDLEWARE concerns
+// NOTE: Handlers assume middleware has already validated session and populated user context
+// NOTE: Handlers focus on business logic: query execution, validation, pagination, result formatting
 func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstructor) {
 	t.Helper()
 

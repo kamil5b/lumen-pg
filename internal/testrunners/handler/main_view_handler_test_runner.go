@@ -25,9 +25,13 @@ type MainViewHandlerConstructor func(
 	rbacUC usecase.RBACUseCase,
 ) handler.MainViewHandler
 
-// MainViewHandlerRunner runs all main view E2E handler tests
+// MainViewHandlerRunner runs all main view handler tests
 // Maps to TEST_PLAN.md:
-// - Story 5: Main View & Data Interaction [E2E-S5-01~15a]
+// - Story 5: Main View & Data Interaction [UC-S5-01~19, E2E-S5-01~15a]
+//
+// NOTE: Authentication and session validation are MIDDLEWARE concerns
+// NOTE: Handlers assume middleware has already validated session and populated user context
+// NOTE: Handlers focus on business logic: data retrieval, filtering, transactions, navigation
 func MainViewHandlerRunner(t *testing.T, constructor MainViewHandlerConstructor) {
 	t.Helper()
 

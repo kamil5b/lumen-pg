@@ -35,9 +35,13 @@ type IsolationHandlerConstructorFunc func(
 	setupUC usecase.SetupUseCase,
 ) IsolationHandlerConstructor
 
-// IsolationHandlerRunner runs all isolation E2E handler tests
+// IsolationHandlerRunner runs all isolation handler tests
 // Maps to TEST_PLAN.md:
-// - Story 6: Isolation [E2E-S6-01~03]
+// - Story 6: Isolation [UC-S6-01~03, E2E-S6-01~03]
+//
+// NOTE: Cookie and session isolation (UC-S6-03) is primarily a MIDDLEWARE concern
+// NOTE: Handlers assume middleware has already isolated sessions per request
+// NOTE: Handlers focus on business logic: multi-user scenarios, permission isolation, transaction isolation
 func IsolationHandlerRunner(t *testing.T, constructor IsolationHandlerConstructorFunc) {
 	t.Helper()
 
