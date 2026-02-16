@@ -92,16 +92,19 @@ Tests security features:
 package main_test
 
 import (
+    "database/sql"
+    "net/http"
     "testing"
-    "lumen-pg/internal/testrunners/e2e"
+    "lumen-pg/internal/testrunners/e2e_integration"
 )
 
 func TestE2ERoutes(t *testing.T) {
-    // Setup your complete router with all middleware
-    router := setupRouter()
-    
-    // Run all E2E tests
-    e2e.RunAllE2ETests(t, router)
+    // E2E runner automatically sets up testcontainer and database
+    // You just provide a constructor function that builds your router
+    e2e_integration.RunAllE2ETests(t, func(db *sql.DB) http.Handler {
+        // Build your complete router with all middleware using the provided DB
+        return setupRouter(db)
+    })
 }
 ```
 
@@ -109,22 +112,37 @@ func TestE2ERoutes(t *testing.T) {
 
 ```go
 func TestAuthenticationE2E(t *testing.T) {
-    router := setupRouter()
-    e2e.RunAuthenticationE2ETests(t, router)
+    e2e_integration.RunAuthenticationE2ETests(t, func(db *sql.DB) http.Handler {
+        return setupRouter(db)
+    })
 }
 
 func TestStory5E2E(t *testing.T) {
-    router := setupRouter()
-    e2e.RunStory(t, router, 5)
+    e2e_integration.RunStory(t, func(db *sql.DB) http.Handler {
+        return setupRouter(db)
+    }, 5)
 }
 ```
 
-### Running Individual Test Cases
+### Running Individual Test Cases (with pre-configured router)
 
 ```go
 func TestLoginFlowE2E(t *testing.T) {
-    router := setupRouter()
-    e2e.Story2AuthE2ERunner(t, router)
+    // For individual test cases, you can use the old pattern
+    // if you want more control over database setup
+    router := setupRouter(db)
+    e2e_integration.Story2AuthE2ERunner(t, router)
+}
+```
+
+### Using Pre-Configured Router (Backward Compatibility)
+
+```go
+func TestE2EWithExistingRouter(t *testing.T) {
+    // If you need to use a pre-configured router
+    // (e.g., for testing against a specific database setup)
+    router := setupRouterWithCustomDB()
+    e2e_integration.RunAllE2ETestsWithRouter(t, router)
 }
 ```
 
@@ -230,49 +248,97 @@ assert.Equal(t, "success", response["status"])
 
 ## Router Setup
 
-E2E tests require a fully configured router with all middleware. Example:
+E2E tests use a **RouterConstructor** pattern. You provide a function that builds your complete router given a database connection. The E2E runner handles testcontainer setup and teardown automatically.
+
+### RouterConstructor Pattern
 
 ```go
-func setupRouter() http.Handler {
-    mux := http.NewServeMux()
+func setupRouter(db *sql.DB) http.Handler {
+    // Create repositories with the provided database
+    dbRepo := repository.NewDatabaseRepository(db)
+    sessionRepo := repository.NewSessionRepository(db)
+    metadataRepo := repository.NewMetadataRepository(db)
     
-    // Create all handlers
-    loginHandler := NewLoginHandler(authUC, setupUC, rbacUC)
-    mainViewHandler := NewMainViewHandler(dataUC, metadataUC)
-    // ... other handlers
+    // Create use cases
+    authUC := usecase.NewAuthenticationUseCase(dbRepo, sessionRepo)
+    dataUC := usecase.NewDataUseCase(dbRepo, metadataRepo)
+    
+    // Create handlers
+    loginHandler := handler.NewLoginHandler(authUC)
+    mainViewHandler := handler.NewMainViewHandler(dataUC)
+    queryHandler := handler.NewQueryEditorHandler(dataUC)
     
     // Create middleware
-    authMiddleware := NewAuthenticationMiddleware(sessionRepo)
-    securityMiddleware := NewSecurityMiddleware()
-    loggingMiddleware := NewLoggingMiddleware()
-    // ... other middleware
+    authMiddleware := middleware.NewAuthenticationMiddleware(sessionRepo)
+    securityMiddleware := middleware.NewSecurityMiddleware()
+    loggingMiddleware := middleware.NewLoggingMiddleware()
     
-    // Register routes with middleware chain
+    // Setup router
+    mux := http.NewServeMux()
+    
+    // Public routes
     mux.Handle("/login", loginHandler)
     mux.Handle("/logout", loginHandler)
+    
+    // Protected routes
     mux.Handle("/main", authMiddleware.RequireAuth(mainViewHandler))
     mux.Handle("/query-editor", authMiddleware.RequireAuth(queryHandler))
-    // ... other routes
+    mux.Handle("/erd-viewer", authMiddleware.RequireAuth(erdHandler))
+    
+    // API routes
+    mux.Handle("/api/data-explorer", authMiddleware.RequireAuth(dataExplorerHandler))
+    mux.Handle("/api/execute-query", authMiddleware.RequireAuth(queryHandler))
+    mux.Handle("/api/transaction/start", authMiddleware.RequireAuth(transactionHandler))
     
     // Wrap with global middleware
     handler := loggingMiddleware.LogRequest(
-        securityMiddleware.SetSecurityHeaders(
-            mux,
-        ),
+        securityMiddleware.SetSecurityHeaders(mux),
     )
     
     return handler
 }
 ```
 
+### Benefits of RouterConstructor Pattern
+
+1. **Self-Contained**: E2E runner manages testcontainer lifecycle
+2. **Consistent**: All E2E tests use the same database setup
+3. **Easy to Use**: No manual database setup required
+4. **Clean**: Automatic resource cleanup
+5. **Follows Repository Pattern**: Similar to repository test runners
+
 ## Test Data
 
-E2E tests expect certain test data to exist:
-- Test users: `testuser`, `testuser1`, `testuser2`, `noaccessuser`
-- Test databases: `testdb`, `testdb1`, `testdb2`
-- Test tables: `users`, `posts`, `comments`, `products`, `orders`
+E2E tests **automatically seed test data** via the `seedE2ETestData` function. The data includes:
 
-See TEST_PLAN.md [L831-899] for complete test data setup.
+### Database Schema
+- **users**: Test users with id, name, email, created_at
+- **posts**: Blog posts with foreign key to users
+- **comments**: Comments with foreign keys to posts and users
+- **products**: Product catalog with pricing and stock
+- **orders**: Order history with foreign keys to users and products
+
+### Seeded Users
+- Alice (id=1, alice@example.com)
+- Bob (id=2, bob@example.com)
+- Charlie (id=3, charlie@example.com)
+- David (id=4, david@example.com)
+
+### Seeded Data
+- 4 posts from various users
+- 4 comments on different posts
+- 4 products in catalog
+- 4 orders from different users
+
+### Test Credentials
+E2E tests expect your authentication to work with:
+- **testuser** / **testpass** (valid user)
+- **testuser1** / **testpass1** (for multi-user tests)
+- **testuser2** / **testpass2** (for multi-user tests)
+- **noaccessuser** / **testpass** (user with no database permissions)
+
+**Note**: The authentication logic must be implemented in your router/handlers.
+The E2E runner only provides the database schema and data.
 
 ## Running Tests
 
@@ -312,23 +378,23 @@ go test -v -cover ./internal/testrunners/e2e/...
 ## Common Issues
 
 ### Issue: Tests pass individually but fail when run together
-**Solution**: Ensure proper test isolation and cleanup between tests
+**Solution**: Each E2E runner function now creates its own testcontainer, ensuring isolation
 
 ### Issue: Cookies not being sent in requests
 **Solution**: Remember to add cookies from login response to subsequent requests
 
 ### Issue: Tests fail with "no rows in result set"
-**Solution**: Ensure test database is properly seeded before running tests
+**Solution**: E2E runner automatically seeds data via `seedE2ETestData`. If tests still fail, check your authentication logic
 
 ### Issue: Transaction tests interfere with each other
-**Solution**: Use separate test users or databases for concurrent transaction tests
+**Solution**: Each test suite gets a fresh testcontainer, preventing interference
+
+### Issue: "connection refused" or database errors
+**Solution**: Ensure Docker is running (testcontainers requires Docker)
 
 ## Integration with CI/CD
 
-E2E tests should run after:
-1. Unit tests pass
-2. Integration tests pass
-3. Test database is seeded
+E2E tests now **automatically handle database setup** via testcontainers. No manual setup required!
 
 Example CI pipeline:
 ```yaml
@@ -338,12 +404,16 @@ Example CI pipeline:
 - name: Run Integration Tests
   run: go test -tags=integration ./...
   
-- name: Setup Test Database
-  run: ./scripts/setup-test-db.sh
-  
 - name: Run E2E Tests
-  run: go test -v ./internal/testrunners/e2e/...
+  run: go test -v ./internal/testrunners/e2e_integration/...
+  
+# testcontainers automatically starts/stops PostgreSQL during tests
 ```
+
+### CI Requirements
+- Docker daemon must be available
+- Sufficient permissions to create containers
+- Network access to pull postgres:15 image
 
 ## References
 
@@ -354,8 +424,10 @@ Example CI pipeline:
 
 ## Notes
 
-- E2E tests are slower than unit tests - run them selectively during development
+- E2E tests are slower than unit tests (due to testcontainer startup) - run them selectively during development
 - Use `-short` flag to skip E2E tests during rapid iteration
-- E2E tests require a running PostgreSQL instance (can use testcontainers)
-- Some tests may require specific PostgreSQL versions or extensions
+- E2E tests automatically manage PostgreSQL via testcontainers (Docker required)
+- Tests use PostgreSQL 15 by default
+- Each test suite creates a fresh testcontainer for complete isolation
 - Cookie security tests may behave differently in test vs production environments
+- The `RouterConstructor` pattern is inspired by repository test runners for consistency
