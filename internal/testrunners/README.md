@@ -42,7 +42,7 @@ lumen-pg/
 │  └─ testrunners/
 │     ├─ repository/           (repository_runner_test.go)
 │     ├─ usecase/              (usecase_runner_test.go)
-│     ├─ e2e/                  (end-to-end test runners)
+│     ├─ handler/                  (end-to-end test runners)
 │     └─ mocks/                (generated mock files)
 ├─ go.mod
 ├─ go.sum
@@ -200,7 +200,7 @@ Test handlers and middleware with **mocked usecases**.
 
 **Example:**
 ```go
-// internal/testrunners/e2e/handler_runner_test.go
+// internal/testrunners/handler/handler_runner_test.go
 type HandlerConstructor func(uc usecase.QueryUsecase) handler.QueryEditorHandler
 
 func QueryEditorHandlerRunner(t *testing.T, constructor HandlerConstructor) {
@@ -459,8 +459,8 @@ func DataViewUsecaseRunner(t *testing.T, constructor UsecaseConstructor) {
 ### Step 6: Create Handler E2E Test Runners
 
 ```go
-// internal/testrunners/e2e/handler_runner_test.go
-package e2e
+// internal/testrunners/handler/handler_runner_test.go
+package handler
 
 import (
     "net/http"
@@ -590,7 +590,7 @@ go test ./internal/testrunners/usecase/... -v -run "Query"
 go test ./internal/testrunners/usecase/... -v -run "DataView"
 
 # E2E Tests
-go test ./internal/testrunners/e2e/... -v
+go test ./internal/testrunners/handler/... -v
 ```
 
 ---
