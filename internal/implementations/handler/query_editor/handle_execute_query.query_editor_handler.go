@@ -48,35 +48,12 @@ func (h *QueryEditorHandlerImplementation) HandleExecuteQuery(w http.ResponseWri
 
 	limit := 50 // Default limit
 
-	// Check for pagination request
-	if offsetStr != "" {
-		// Execute with pagination
-		result, err := h.queryUC.ExecuteQueryWithPagination(r.Context(), session.Username, domain.QueryParams{
-			Query:  query,
-			Offset: offset,
-			Limit:  limit,
-		})
-		if err != nil {
-			// Check for permission error
-			if validationErr, ok := err.(domain.ValidationError); ok {
-				if validationErr.Field == "permission" {
-					w.WriteHeader(http.StatusForbidden)
-					w.Write([]byte("<div class='error'>" + validationErr.Message + "</div>"))
-					return
-				}
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("<div class='error'>" + err.Error() + "</div>"))
-			return
-		}
-
-		// Render result with pagination info
-		h.renderQueryResult(w, result)
-		return
-	}
-
-	// Execute query
-	result, err := h.queryUC.ExecuteQuery(r.Context(), session.Username, query, offset, limit)
+	// Execute query with pagination
+	result, err := h.queryUC.ExecuteQueryWithPagination(r.Context(), session.Username, domain.QueryParams{
+		Query:  query,
+		Offset: offset,
+		Limit:  limit,
+	})
 	if err != nil {
 		// Check for validation errors
 		if validationErr, ok := err.(domain.ValidationError); ok {

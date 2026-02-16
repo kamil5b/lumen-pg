@@ -19,7 +19,7 @@ func (h *TransactionHandlerImplementation) HandleCommitTransaction(w http.Respon
 		return
 	}
 
-	// Check if transaction is expired
+	// Check if transaction is expired first
 	isExpired, err := h.transactionUC.IsTransactionExpired(r.Context(), session.Username)
 	if err != nil {
 		http.Error(w, "Error checking transaction expiration: "+err.Error(), http.StatusInternalServerError)

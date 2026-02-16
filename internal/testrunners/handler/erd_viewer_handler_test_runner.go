@@ -54,6 +54,10 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 			Return([]string{"public", "private"}, nil)
 
 		mockERD.EXPECT().
+			IsSchemaEmpty(gomock.Any(), "testuser", "testdb", "public").
+			Return(false, nil)
+
+		mockERD.EXPECT().
 			GenerateERD(gomock.Any(), "testuser", "testdb", "public").
 			Return(&domain.ERDData{
 				Tables: []domain.ERDTable{
@@ -115,6 +119,10 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 			Return([]string{"public"}, nil)
 
 		mockERD.EXPECT().
+			IsSchemaEmpty(gomock.Any(), "testuser", "testdb", "public").
+			Return(false, nil)
+
+		mockERD.EXPECT().
 			GenerateERD(gomock.Any(), "testuser", "testdb", "public").
 			Return(&domain.ERDData{
 				Tables:        []domain.ERDTable{},
@@ -151,6 +159,10 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 		mockERD.EXPECT().
 			GetAvailableSchemas(gomock.Any(), "testuser", "testdb").
 			Return([]string{"public"}, nil)
+
+		mockERD.EXPECT().
+			IsSchemaEmpty(gomock.Any(), "testuser", "testdb", "public").
+			Return(false, nil)
 
 		mockERD.EXPECT().
 			GenerateERD(gomock.Any(), "testuser", "testdb", "public").
@@ -266,6 +278,10 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 			Return([]string{"public"}, nil)
 
 		mockERD.EXPECT().
+			IsSchemaEmpty(gomock.Any(), "testuser", "testdb", "public").
+			Return(false, nil)
+
+		mockERD.EXPECT().
 			GenerateERD(gomock.Any(), "testuser", "testdb", "public").
 			Return(&domain.ERDData{
 				Tables: []domain.ERDTable{
@@ -312,6 +328,10 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 			Return([]string{"public", "private", "staging"}, nil)
 
 		mockERD.EXPECT().
+			IsSchemaEmpty(gomock.Any(), "testuser", "testdb", "public").
+			Return(false, nil)
+
+		mockERD.EXPECT().
 			GenerateERD(gomock.Any(), "testuser", "testdb", "public").
 			Return(&domain.ERDData{
 				Tables:        []domain.ERDTable{},
@@ -338,10 +358,7 @@ func ERDViewerHandlerRunner(t *testing.T, constructor ERDViewerHandlerConstructo
 
 	// Additional test: Unauthorized access
 	t.Run("Unauthorized Access to ERD Viewer", func(t *testing.T) {
-		mockAuth.EXPECT().
-			ValidateSession(gomock.Any(), "").
-			Return(nil, domain.ValidationError{Field: "session", Message: "No session"})
-
+		// No mock needed - handler returns early when no cookie is present
 		req := httptest.NewRequest(http.MethodGet, "/erd?database=testdb&schema=public", nil)
 		rec := httptest.NewRecorder()
 

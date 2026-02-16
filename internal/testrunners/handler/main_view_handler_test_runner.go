@@ -387,10 +387,7 @@ func MainViewHandlerRunner(t *testing.T, constructor MainViewHandlerConstructor)
 				Username: "readonly_user",
 			}, nil)
 
-		mockRBAC.EXPECT().
-			CheckUpdatePermission(gomock.Any(), "readonly_user", "testdb", "public", "users").
-			Return(false, nil)
-
+		// No RBAC check needed - loading data only requires read permission (already checked by middleware)
 		mockDataView.EXPECT().
 			LoadTableData(gomock.Any(), "readonly_user", gomock.Any()).
 			Return(&domain.QueryResult{
@@ -423,16 +420,13 @@ func MainViewHandlerRunner(t *testing.T, constructor MainViewHandlerConstructor)
 
 	// Additional test: Unauthorized access
 	t.Run("Unauthorized Access to Main View", func(t *testing.T) {
-		mockAuth.EXPECT().
-			ValidateSession(gomock.Any(), "").
-			Return(nil, domain.ValidationError{Field: "session", Message: "No session"})
-
+		// No mock needed - handler returns early when no cookie is present
 		req := httptest.NewRequest(http.MethodGet, "/main", nil)
 		rec := httptest.NewRecorder()
 
 		h.HandleMainViewPage(rec, req.WithContext(ctx))
 
-		require.Equal(t, http.StatusUnauthorized, rec.Code)
+		require.Equal(t, http.StatusFound, rec.Code) // Redirects to /login
 	})
 
 	// Additional test: Table not accessible

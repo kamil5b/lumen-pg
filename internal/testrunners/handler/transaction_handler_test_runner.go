@@ -185,6 +185,10 @@ func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstr
 			}, nil)
 
 		mockTxn.EXPECT().
+			IsTransactionExpired(gomock.Any(), "testuser").
+			Return(false, nil)
+
+		mockTxn.EXPECT().
 			CheckActiveTransaction(gomock.Any(), "testuser").
 			Return(true, nil)
 
@@ -249,6 +253,25 @@ func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstr
 			ValidateSession(gomock.Any(), "session_123").
 			Return(&domain.Session{
 				ID:       "session_123",
+				Username: "testuser",
+			}, nil)
+
+		mockTxn.EXPECT().
+			GetTransactionEdits(gomock.Any(), "testuser").
+			Return(map[int]domain.RowEdit{}, nil)
+
+		mockTxn.EXPECT().
+			GetTransactionDeletes(gomock.Any(), "testuser").
+			Return([]int{}, nil)
+
+		mockTxn.EXPECT().
+			GetTransactionInserts(gomock.Any(), "testuser").
+			Return([]domain.RowInsert{}, nil)
+
+		mockTxn.EXPECT().
+			GetActiveTransaction(gomock.Any(), "testuser").
+			Return(&domain.TransactionState{
+				ID:       "txn_123",
 				Username: "testuser",
 			}, nil)
 
@@ -475,10 +498,7 @@ func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstr
 
 	// Additional test: Unauthorized access
 	t.Run("Unauthorized Access to Transaction", func(t *testing.T) {
-		mockAuth.EXPECT().
-			ValidateSession(gomock.Any(), "").
-			Return(nil, domain.ValidationError{Field: "session", Message: "No session"})
-
+		// No mock needed - handler returns early when no cookie is present
 		req := httptest.NewRequest(http.MethodPost, "/transaction/start?database=testdb&schema=public&table=users", nil)
 		rec := httptest.NewRecorder()
 
@@ -497,11 +517,27 @@ func TransactionHandlerRunner(t *testing.T, constructor TransactionHandlerConstr
 			}, nil)
 
 		mockTxn.EXPECT().
+			GetTransactionEdits(gomock.Any(), "testuser").
+			Return(map[int]domain.RowEdit{}, nil)
+
+		mockTxn.EXPECT().
+			GetTransactionDeletes(gomock.Any(), "testuser").
+			Return([]int{}, nil)
+
+		mockTxn.EXPECT().
+			GetTransactionInserts(gomock.Any(), "testuser").
+			Return([]domain.RowInsert{}, nil)
+
+		mockTxn.EXPECT().
 			GetActiveTransaction(gomock.Any(), "testuser").
 			Return(&domain.TransactionState{
 				ID:       "txn_123",
 				Username: "testuser",
 			}, nil)
+
+		mockTxn.EXPECT().
+			GetTransactionRemainingTime(gomock.Any(), "testuser").
+			Return(int64(60), nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/transaction/status", nil)
 		req.AddCookie(&http.Cookie{

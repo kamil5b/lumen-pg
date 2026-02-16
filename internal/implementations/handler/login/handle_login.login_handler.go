@@ -40,7 +40,12 @@ func (h *LoginHandlerImplementation) HandleLogin(w http.ResponseWriter, r *http.
 
 	// Probe connection
 	success, err := h.authUC.ProbeConnection(r.Context(), username, password)
-	if err != nil || !success {
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("<div class='error'>" + err.Error() + "</div>"))
+		return
+	}
+	if !success {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("<div class='error'>Invalid credentials</div>"))
 		return
@@ -91,6 +96,7 @@ func (h *LoginHandlerImplementation) HandleLogin(w http.ResponseWriter, r *http.
 		Name:     "session_id",
 		Value:    session.ID,
 		Path:     "/",
+		MaxAge:   3600, // 1 hour
 		HttpOnly: true,
 		Secure:   false, // Set to true in production with HTTPS
 		SameSite: http.SameSiteStrictMode,

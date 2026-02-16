@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/kamil5b/lumen-pg/internal/domain"
 )
 
 func (h *ERDViewerHandlerImplementation) HandleERDViewerPage(w http.ResponseWriter, r *http.Request) {
@@ -52,9 +54,16 @@ func (h *ERDViewerHandlerImplementation) HandleERDViewerPage(w http.ResponseWrit
 	}
 
 	// Generate ERD data
-	erdData, err := h.erdUC.GenerateERD(r.Context(), session.Username, database, schema)
+	erdDataRaw, err := h.erdUC.GenerateERD(r.Context(), session.Username, database, schema)
 	if err != nil {
 		http.Error(w, "Error generating ERD: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Type assert to domain.ERDData
+	erdData, ok := erdDataRaw.(*domain.ERDData)
+	if !ok {
+		http.Error(w, "Invalid ERD data type", http.StatusInternalServerError)
 		return
 	}
 
@@ -64,7 +73,7 @@ func (h *ERDViewerHandlerImplementation) HandleERDViewerPage(w http.ResponseWrit
 	h.renderERDPage(w, database, schema, schemas, erdData)
 }
 
-func (h *ERDViewerHandlerImplementation) renderERDPage(w http.ResponseWriter, database, schema string, schemas []string, erdData interface{}) {
+func (h *ERDViewerHandlerImplementation) renderERDPage(w http.ResponseWriter, database, schema string, schemas []string, erdData *domain.ERDData) {
 	var html strings.Builder
 
 	html.WriteString(`<!DOCTYPE html>
@@ -116,8 +125,28 @@ func (h *ERDViewerHandlerImplementation) renderERDPage(w http.ResponseWriter, da
 	</div>
 	<div class="erd-container">
 		<div class="erd-canvas draggable pan" id="erd-canvas">
-			<div class="erd-diagram" id="erd-diagram">
-				<!-- ERD content will be rendered here -->
+			<div class="erd-diagram" id="erd-diagram">`)
+
+	// Render ERD tables
+	if erdData != nil {
+		for i, table := range erdData.Tables {
+			html.WriteString(fmt.Sprintf(`
+				<div class="erd-table" style="left: %dpx; top: %dpx;">
+					<div class="table-name">%s</div>`, 50+(i*200), 50+(i*100), table.Name))
+			for _, col := range table.Columns {
+				keyIndicator := ""
+				if col.IsPrimary {
+					keyIndicator = " (PK)"
+				}
+				html.WriteString(fmt.Sprintf(`
+					<div class="table-column">%s: %s%s</div>`, col.Name, col.DataType, keyIndicator))
+			}
+			html.WriteString(`
+				</div>`)
+		}
+	}
+
+	html.WriteString(`
 			</div>
 		</div>
 	</div>

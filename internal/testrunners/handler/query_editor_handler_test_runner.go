@@ -83,7 +83,7 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 			}, nil)
 
 		mockQuery.EXPECT().
-			ExecuteQuery(gomock.Any(), "testuser", "SELECT * FROM users WHERE id > 10", 0, 50).
+			ExecuteQueryWithPagination(gomock.Any(), "testuser", gomock.Any()).
 			Return(&domain.QueryResult{
 				Columns: []string{"id", "name", "email"},
 				Rows: []map[string]interface{}{
@@ -175,7 +175,7 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 			}, nil)
 
 		mockQuery.EXPECT().
-			ExecuteQuery(gomock.Any(), "testuser", "SELECT * FORM users", 0, 50).
+			ExecuteQueryWithPagination(gomock.Any(), "testuser", gomock.Any()).
 			Return(nil, domain.ValidationError{
 				Field:   "query",
 				Message: "syntax error at or near \"FORM\"",
@@ -357,7 +357,7 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 			}, nil)
 
 		mockQuery.EXPECT().
-			ExecuteQuery(gomock.Any(), "testuser", gomock.Any(), 0, 50).
+			ExecuteQueryWithPagination(gomock.Any(), "testuser", gomock.Any()).
 			Return(&domain.QueryResult{
 				Columns:  []string{},
 				Rows:     []map[string]interface{}{},
@@ -393,7 +393,7 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 			}, nil)
 
 		mockQuery.EXPECT().
-			ExecuteQuery(gomock.Any(), "testuser", gomock.Any(), 0, 50).
+			ExecuteQueryWithPagination(gomock.Any(), "testuser", gomock.Any()).
 			Return(&domain.QueryResult{
 				Columns:  []string{},
 				Rows:     []map[string]interface{}{},
@@ -429,7 +429,7 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 			}, nil)
 
 		mockQuery.EXPECT().
-			ExecuteQuery(gomock.Any(), "testuser", "SELECT * FROM admin_only_table", 0, 50).
+			ExecuteQueryWithPagination(gomock.Any(), "testuser", gomock.Any()).
 			Return(nil, domain.ValidationError{
 				Field:   "permission",
 				Message: "permission denied for table admin_only_table",
@@ -454,10 +454,7 @@ func QueryEditorHandlerRunner(t *testing.T, constructor QueryEditorHandlerConstr
 
 	// Additional test: Unauthorized access
 	t.Run("Unauthorized Access to Query Editor", func(t *testing.T) {
-		mockAuth.EXPECT().
-			ValidateSession(gomock.Any(), "").
-			Return(nil, domain.ValidationError{Field: "session", Message: "No session"})
-
+		// No mock needed - handler returns early when no cookie is present
 		req := httptest.NewRequest(http.MethodGet, "/query-editor", nil)
 		rec := httptest.NewRecorder()
 

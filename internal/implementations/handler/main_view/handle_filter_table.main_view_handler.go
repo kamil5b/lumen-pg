@@ -40,7 +40,12 @@ func (h *MainViewHandlerImplementation) HandleFilterTable(w http.ResponseWriter,
 
 	// Validate WHERE clause
 	isValid, err := h.dataViewUC.ValidateWhereClause(r.Context(), whereClause)
-	if err != nil || !isValid {
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("<div class='error'>" + err.Error() + "</div>"))
+		return
+	}
+	if !isValid {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("<div class='error'>Invalid WHERE clause</div>"))
 		return

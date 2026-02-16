@@ -2,7 +2,6 @@ package main_view
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/kamil5b/lumen-pg/internal/domain"
 )
@@ -22,40 +21,38 @@ func (h *MainViewHandlerImplementation) HandlePaginationNext(w http.ResponseWrit
 		return
 	}
 
-	// Get query parameters
-	database := r.URL.Query().Get("database")
-	schema := r.URL.Query().Get("schema")
-	table := r.URL.Query().Get("table")
-	offsetStr := r.URL.Query().Get("offset")
-	limitStr := r.URL.Query().Get("limit")
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error parsing form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get parameters
+	database := r.FormValue("database")
+	schema := r.FormValue("schema")
+	table := r.FormValue("table")
+	cursor := r.FormValue("cursor")
 
 	if database == "" || schema == "" || table == "" {
 		http.Error(w, "Missing required parameters", http.StatusBadRequest)
 		return
 	}
 
-	// Parse offset and limit
-	offset := 0
-	if offsetStr != "" {
-		offset, _ = strconv.Atoi(offsetStr)
+	var tableData *domain.QueryResult
+
+	// Use cursor pagination if cursor is provided
+	if cursor != "" {
+		tableData, err = h.dataViewUC.GetTableDataWithCursorPagination(r.Context(), session.Username, database, schema, table, cursor, 50)
+	} else {
+		// Fallback to offset-based pagination
+		tableData, err = h.dataViewUC.LoadTableData(r.Context(), session.Username, domain.TableDataParams{
+			Database: database,
+			Schema:   schema,
+			Table:    table,
+			Offset:   0,
+			Limit:    50,
+		})
 	}
-
-	limit := 50 // Default limit
-	if limitStr != "" {
-		limit, _ = strconv.Atoi(limitStr)
-	}
-
-	// Move to next page
-	offset += limit
-
-	// Load table data
-	tableData, err := h.dataViewUC.LoadTableData(r.Context(), session.Username, domain.TableDataParams{
-		Database: database,
-		Schema:   schema,
-		Table:    table,
-		Offset:   offset,
-		Limit:    limit,
-	})
 	if err != nil {
 		http.Error(w, "Error loading table data: "+err.Error(), http.StatusInternalServerError)
 		return

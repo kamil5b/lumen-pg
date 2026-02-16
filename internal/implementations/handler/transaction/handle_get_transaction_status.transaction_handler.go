@@ -22,45 +22,7 @@ func (h *TransactionHandlerImplementation) HandleGetTransactionStatus(w http.Res
 		return
 	}
 
-	// Get active transaction
-	txnState, err := h.transactionUC.GetActiveTransaction(r.Context(), session.Username)
-	if err != nil {
-		// Check if there are edits/deletes/inserts
-		edits, _ := h.transactionUC.GetTransactionEdits(r.Context(), session.Username)
-		deletes, _ := h.transactionUC.GetTransactionDeletes(r.Context(), session.Username)
-		inserts, _ := h.transactionUC.GetTransactionInserts(r.Context(), session.Username)
-
-		if len(edits) == 0 && len(deletes) == 0 && len(inserts) == 0 {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<div class='no-transaction'>No active transaction</div>"))
-			return
-		}
-
-		// Return buffer information
-		response := map[string]interface{}{
-			"active":       false,
-			"edits":        edits,
-			"deletes":      deletes,
-			"inserts":      inserts,
-			"edit_count":   len(edits),
-			"delete_count": len(deletes),
-			"insert_count": len(inserts),
-		}
-
-		jsonData, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(jsonData)
-		return
-	}
-
-	// Get remaining time
-	remainingTime, err := h.transactionUC.GetTransactionRemainingTime(r.Context(), session.Username)
-	if err != nil {
-		remainingTime = 0
-	}
-
-	// Get transaction edits
+	// Get transaction edits first
 	edits, err := h.transactionUC.GetTransactionEdits(r.Context(), session.Username)
 	if err != nil {
 		edits = make(map[int]domain.RowEdit)
@@ -78,7 +40,41 @@ func (h *TransactionHandlerImplementation) HandleGetTransactionStatus(w http.Res
 		inserts = []domain.RowInsert{}
 	}
 
-	// Build response
+	// Check if there are any edits/deletes/inserts (buffer data)
+	if len(edits) > 0 || len(deletes) > 0 || len(inserts) > 0 {
+		// Return buffer information (may or may not have active transaction)
+		response := map[string]interface{}{
+			"edits":        edits,
+			"deletes":      deletes,
+			"inserts":      inserts,
+			"edit_count":   len(edits),
+			"delete_count": len(deletes),
+			"insert_count": len(inserts),
+		}
+
+		jsonData, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(jsonData)
+		return
+	}
+
+	// No buffer data - check for active transaction
+	txnState, err := h.transactionUC.GetActiveTransaction(r.Context(), session.Username)
+	if err != nil {
+		// No active transaction and no buffer data
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("<div class='no-transaction'>No active transaction</div>"))
+		return
+	}
+
+	// Get remaining time
+	remainingTime, err := h.transactionUC.GetTransactionRemainingTime(r.Context(), session.Username)
+	if err != nil {
+		remainingTime = 0
+	}
+
+	// Build response for active transaction
 	response := map[string]interface{}{
 		"active":         true,
 		"transaction_id": txnState.ID,
@@ -87,9 +83,9 @@ func (h *TransactionHandlerImplementation) HandleGetTransactionStatus(w http.Res
 		"edits":          edits,
 		"deletes":        deletes,
 		"inserts":        inserts,
-		"edit_count":     len(edits),
-		"delete_count":   len(deletes),
-		"insert_count":   len(inserts),
+		"edit_count":     0,
+		"delete_count":   0,
+		"insert_count":   0,
 	}
 
 	jsonData, err := json.Marshal(response)

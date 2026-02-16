@@ -54,7 +54,14 @@ func (h *MainViewHandlerImplementation) HandleLoadTableData(w http.ResponseWrite
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 
-	html := `<table class="data-table"><thead><tr>`
+	html := ``
+
+	// Add pagination info if total count is available
+	if tableData.TotalCount > 0 {
+		html += `<div class="pagination-info">Showing ` + itoa(int(tableData.RowCount)) + ` of ` + itoa(int(tableData.TotalCount)) + ` rows</div>`
+	}
+
+	html += `<table class="data-table"><thead><tr>`
 
 	// Render column headers
 	for _, col := range tableData.Columns {
